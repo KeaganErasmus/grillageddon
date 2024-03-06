@@ -1,7 +1,9 @@
-use macroquad::prelude::*;
+use macroquad::{prelude::*, rand};
+
 
 const MAX_ENEMIES: i32 = 1000;
 
+#[derive(Clone)]
 pub struct Enemy {
     position: Vec2,
     speed: f32,
@@ -125,24 +127,44 @@ fn update(game: &mut Game) {
 
 fn enemy_update(game: &mut Game){
     let player_pos: Vec2 = game.player.position;
-    for enemy in game.enemies.iter_mut(){
-        // horizontal case
-        if enemy.position.x < player_pos.x {
-            enemy.position.x += enemy.speed;
-        }
-        else if enemy.position.x > player_pos.x {
-            enemy.position.x -= enemy.speed;
+
+    // Clone the enemies vector to iterate over
+    let enemies_clone = game.enemies.clone();
+
+    for enemy in game.enemies.iter_mut() {
+        // Calculate the direction towards the player
+        let direction = player_pos - enemy.position;
+        let distance = direction.length();
+
+        // Normalize the direction
+        let mut normalized_direction = direction;
+        if distance != 0.0 {
+            normalized_direction /= distance;
         }
 
-        if enemy.position.y < player_pos.y {
-            enemy.position.y += enemy.speed;
-        }
-        if enemy.position.y > player_pos.y {
-            enemy.position.y -= enemy.speed;
+        // Adjust the enemy's position based on the direction
+        let new_position = enemy.position + normalized_direction * enemy.speed;
+
+        // Check for collisions with other enemies and adjust position
+        for other_enemy in enemies_clone.iter() {
+            if enemy.coll_rect.overlaps(&other_enemy.coll_rect) {
+                let avoidance_direction = enemy.position - other_enemy.position;
+                let avoidance_distance = avoidance_direction.length();
+
+                if avoidance_distance != 0.0 {
+                    // Adjust the normalized direction based on avoidance direction
+                    normalized_direction += avoidance_direction.normalize() / avoidance_distance;
+                }
+            }
         }
 
+        // Move the enemy
+        enemy.position = enemy.position + normalized_direction * enemy.speed;
+
+        // Update collision rectangle
         enemy.coll_rect.x = enemy.position.x;
         enemy.coll_rect.y = enemy.position.y;
+    
     }
 }
 
