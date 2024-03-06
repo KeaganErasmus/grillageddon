@@ -1,43 +1,12 @@
+mod player;
+mod enemy;
+
+use enemy::Enemy;
 use macroquad::{prelude::*, rand};
+use player::Player;
 
 
-const MAX_ENEMIES: i32 = 1000;
-
-#[derive(Clone)]
-pub struct Enemy {
-    position: Vec2,
-    speed: f32,
-    texture: Texture2D,
-    coll_rect: Rect,
-}
-
-impl Enemy {
-    fn new(position: Vec2, texture: &Texture2D) -> Enemy {
-        Enemy {
-            position: position,
-            speed: 1.0,
-            texture: texture.clone(),
-            coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
-        }
-    }
-}
-pub struct Player {
-    position: Vec2,
-    speed: f32,
-    texture: Texture2D,
-    coll_rect: Rect,
-}
-
-impl Player {
-    fn new(position: Vec2, speed: f32, texture: &Texture2D) -> Player {
-        Player {
-            position: position,
-            speed: speed,
-            texture: texture.clone(),
-            coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
-        }
-    }
-}
+const MAX_ENEMIES: i32 = 2;
 
 pub enum GameState {
     Pause,
@@ -93,8 +62,20 @@ async fn init_game() -> Game {
 }
 
 fn update(game: &mut Game) {
-    // let mouse_pos = mouse_position();
 
+    if is_key_pressed(KeyCode::Escape) {
+        game.state = GameState::Pause;
+    }
+
+    if is_mouse_button_down(MouseButton::Left) {
+        
+    }
+    
+    player_update(game);
+    enemy_update(game);
+}
+
+fn player_update(game: &mut Game){
     if is_key_down(KeyCode::A) {
         game.player.position.x -= game.player.speed;
     }
@@ -111,18 +92,8 @@ fn update(game: &mut Game) {
         game.player.position.y += game.player.speed;
     }
 
-    if is_key_pressed(KeyCode::Escape) {
-        game.state = GameState::Pause;
-    }
-
-    if is_mouse_button_down(MouseButton::Left) {
-        
-    }
-
     game.player.coll_rect.x = game.player.position.x;
     game.player.coll_rect.y = game.player.position.y;
-
-    enemy_update(game);
 }
 
 fn enemy_update(game: &mut Game){
@@ -142,9 +113,6 @@ fn enemy_update(game: &mut Game){
             normalized_direction /= distance;
         }
 
-        // Adjust the enemy's position based on the direction
-        let new_position = enemy.position + normalized_direction * enemy.speed;
-
         // Check for collisions with other enemies and adjust position
         for other_enemy in enemies_clone.iter() {
             if enemy.coll_rect.overlaps(&other_enemy.coll_rect) {
@@ -158,10 +126,7 @@ fn enemy_update(game: &mut Game){
             }
         }
 
-        // Move the enemy
         enemy.position = enemy.position + normalized_direction * enemy.speed;
-
-        // Update collision rectangle
         enemy.coll_rect.x = enemy.position.x;
         enemy.coll_rect.y = enemy.position.y;
     
