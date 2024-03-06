@@ -76,24 +76,32 @@ fn update(game: &mut Game) {
 }
 
 fn player_update(game: &mut Game){
+    let mut movement = Vec2::default();
+    
     if is_key_down(KeyCode::A) {
-        game.player.position.x -= game.player.speed;
+        movement.x -= 1.0;
     }
 
     if is_key_down(KeyCode::D) {
-        game.player.position.x += game.player.speed;
+        movement.x += 1.0;
     }
 
     if is_key_down(KeyCode::W) {
-        game.player.position.y -= game.player.speed;
+        movement.y -= 1.0;
     }
 
     if is_key_down(KeyCode::S) {
-        game.player.position.y += game.player.speed;
+        movement.y += 1.0;
     }
 
+    if movement.length() > 1.0 {
+        movement = movement.normalize();
+    }
+
+    game.player.position += movement * game.player.speed;
     game.player.coll_rect.x = game.player.position.x;
     game.player.coll_rect.y = game.player.position.y;
+
 }
 
 fn enemy_update(game: &mut Game){
