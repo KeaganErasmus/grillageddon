@@ -1,25 +1,23 @@
-mod player;
 mod enemy;
+mod player;
 
 use enemy::Enemy;
 use macroquad::{prelude::*, rand};
 use player::Player;
 
-
 const MAX_ENEMIES: i32 = 2;
-
 
 pub struct Bullet {
     pub position: Vec2,
     pub texture: Texture2D,
-    coll_rect: Rect
+    coll_rect: Rect,
 }
 impl Bullet {
-    pub fn new(position: Vec2, texture: &Texture2D) -> Bullet{
-        Bullet{
+    pub fn new(position: Vec2, texture: &Texture2D) -> Bullet {
+        Bullet {
             position: position,
             texture: texture.clone(),
-            coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height())
+            coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
         }
     }
 }
@@ -34,7 +32,7 @@ pub struct Game {
     state: GameState,
     player: Player,
     enemies: Vec<Enemy>,
-    bullets: Vec<Bullet>
+    bullets: Vec<Bullet>,
 }
 
 #[macroquad::main("Grillageddon")]
@@ -76,35 +74,32 @@ async fn init_game() -> Game {
         state: GameState::Play,
         player: player,
         enemies: enemies,
-        bullets: bullets
+        bullets: bullets,
     }
 }
 
 fn update(game: &mut Game) {
-
     if is_key_pressed(KeyCode::Escape) {
         game.state = GameState::Pause;
     }
 
-    if is_mouse_button_down(MouseButton::Left) {
-        
-    }
-    
+    if is_mouse_button_down(MouseButton::Left) {}
+
     player_update(game);
     bullet_update(game);
     enemy_update(game);
 }
 
-fn bullet_update(game: &mut Game){
-    if is_mouse_button_pressed(MouseButton::Left){
-        game.bullets.push(Bullet::new(game.player.position, &game.player.texture))
+fn bullet_update(game: &mut Game) {
+    if is_mouse_button_pressed(MouseButton::Left) {
+        game.bullets
+            .push(Bullet::new(game.player.position, &game.player.texture))
     }
-
 }
 
-fn player_update(game: &mut Game){
+fn player_update(game: &mut Game) {
     let mut movement = Vec2::default();
-    
+
     if is_key_down(KeyCode::A) {
         movement.x -= 1.0;
     }
@@ -128,10 +123,9 @@ fn player_update(game: &mut Game){
     game.player.position += movement * game.player.speed;
     game.player.coll_rect.x = game.player.position.x;
     game.player.coll_rect.y = game.player.position.y;
-
 }
 
-fn enemy_update(game: &mut Game){
+fn enemy_update(game: &mut Game) {
     let player_pos: Vec2 = game.player.position;
 
     // Clone the enemies vector to iterate over
@@ -164,12 +158,11 @@ fn enemy_update(game: &mut Game){
         enemy.position = enemy.position + normalized_direction * enemy.speed;
         enemy.coll_rect.x = enemy.position.x;
         enemy.coll_rect.y = enemy.position.y;
-    
     }
 }
 
 fn draw(game: &mut Game) {
-    for bullet in game.bullets.iter_mut(){
+    for bullet in game.bullets.iter_mut() {
         draw_texture(&bullet.texture, bullet.position.x, bullet.position.y, BLACK);
     }
 
