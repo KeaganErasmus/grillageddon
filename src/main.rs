@@ -8,6 +8,22 @@ use player::Player;
 
 const MAX_ENEMIES: i32 = 2;
 
+
+pub struct Bullet {
+    pub position: Vec2,
+    pub texture: Texture2D,
+    coll_rect: Rect
+}
+impl Bullet {
+    pub fn new(position: Vec2, texture: &Texture2D) -> Bullet{
+        Bullet{
+            position: position,
+            texture: texture.clone(),
+            coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height())
+        }
+    }
+}
+
 pub enum GameState {
     Pause,
     Play,
@@ -18,6 +34,7 @@ pub struct Game {
     state: GameState,
     player: Player,
     enemies: Vec<Enemy>,
+    bullets: Vec<Bullet>
 }
 
 #[macroquad::main("Grillageddon")]
@@ -43,6 +60,7 @@ async fn init_game() -> Game {
     let enemy_texture = load_texture("assets/player.png").await.unwrap();
     let player = Player::new(Vec2::new(100.0, 100.0), 3.0, &player_texture);
     let mut enemies: Vec<Enemy> = Vec::new();
+    let mut bullets: Vec<Bullet> = Vec::new();
 
     for _ in 0..MAX_ENEMIES {
         enemies.push(Enemy::new(
@@ -58,6 +76,7 @@ async fn init_game() -> Game {
         state: GameState::Play,
         player: player,
         enemies: enemies,
+        bullets: bullets
     }
 }
 
@@ -72,7 +91,15 @@ fn update(game: &mut Game) {
     }
     
     player_update(game);
+    bullet_update(game);
     enemy_update(game);
+}
+
+fn bullet_update(game: &mut Game){
+    if is_mouse_button_pressed(MouseButton::Left){
+        game.bullets.push(Bullet::new(game.player.position, &game.player.texture))
+    }
+
 }
 
 fn player_update(game: &mut Game){
@@ -142,9 +169,14 @@ fn enemy_update(game: &mut Game){
 }
 
 fn draw(game: &mut Game) {
+    for bullet in game.bullets.iter_mut(){
+        draw_texture(&bullet.texture, bullet.position.x, bullet.position.y, BLACK);
+    }
+
     for enemy in game.enemies.iter_mut() {
         draw_texture(&enemy.texture, enemy.position.x, enemy.position.y, RED);
     }
+
     draw_texture(
         &game.player.texture,
         game.player.position.x,
