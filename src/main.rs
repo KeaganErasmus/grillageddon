@@ -12,16 +12,27 @@ pub struct Bullet {
     pub texture: Texture2D,
     pub coll_rect: Rect,
     pub target: Vec2,
-    pub is_active: bool
+    pub is_active: bool,
+    pub velocity: Vec2,
+    pub speed: f32,
 }
 impl Bullet {
-    pub fn new(position: Vec2, texture: &Texture2D, target: Vec2, is_active: bool) -> Bullet {
+    pub fn new(
+        position: Vec2,
+        texture: &Texture2D,
+        target: Vec2,
+        is_active: bool,
+        speed: f32,
+    ) -> Bullet {
+        let direction = target - position;
         Bullet {
             position: position,
             texture: texture.clone(),
             coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
             target: target,
-            is_active: is_active
+            is_active: is_active,
+            velocity: direction.normalize(),
+            speed: speed,
         }
     }
 }
@@ -62,7 +73,7 @@ async fn init_game() -> Game {
     let enemy_texture = load_texture("assets/player.png").await.unwrap();
     let player = Player::new(Vec2::new(100.0, 100.0), 3.0, &player_texture);
     let mut enemies: Vec<Enemy> = Vec::new();
-    let mut bullets: Vec<Bullet> = Vec::new();
+    let bullets: Vec<Bullet> = Vec::new();
 
     for _ in 0..MAX_ENEMIES {
         enemies.push(Enemy::new(
@@ -98,23 +109,25 @@ fn bullet_update(game: &mut Game) {
     if is_mouse_button_pressed(MouseButton::Left) {
         let mouse_pos = mouse_position();
         let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
-        game.bullets
-            .push(Bullet::new(game.player.position, &game.player.texture, mouse_target, true))
+        game.bullets.push(Bullet::new(
+            game.player.position,
+            &game.player.texture,
+            mouse_target,
+            true,
+            3.0,
+        ))
     }
 
-    for bullet in game.bullets.iter_mut(){
-        let direction = bullet.target - bullet.position;
-        
-        if bullet.is_active{
-            bullet.position += direction.normalize() * 2.0;
-        }
+    for bullet in game.bullets.iter_mut() {
+        bullet.position += bullet.velocity * bullet.speed;
 
-        if bullet.position == bullet.target{
-            println!("yeet");
+        if bullet.position.x > screen_width() || bullet.position.x < 0.0 {
             bullet.is_active = false;
         }
 
-        println!("{}", bullet.position);
+        if bullet.position.y > screen_height() || bullet.position.y < 0.0 {
+            bullet.is_active = false;
+        }
     }
 
     game.bullets.retain(|bullet| bullet.is_active == true);
