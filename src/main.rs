@@ -10,14 +10,18 @@ const MAX_ENEMIES: i32 = 2;
 pub struct Bullet {
     pub position: Vec2,
     pub texture: Texture2D,
-    coll_rect: Rect,
+    pub coll_rect: Rect,
+    pub target: Vec2,
+    pub is_active: bool
 }
 impl Bullet {
-    pub fn new(position: Vec2, texture: &Texture2D) -> Bullet {
+    pub fn new(position: Vec2, texture: &Texture2D, target: Vec2, is_active: bool) -> Bullet {
         Bullet {
             position: position,
             texture: texture.clone(),
             coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
+            target: target,
+            is_active: is_active
         }
     }
 }
@@ -92,9 +96,28 @@ fn update(game: &mut Game) {
 
 fn bullet_update(game: &mut Game) {
     if is_mouse_button_pressed(MouseButton::Left) {
+        let mouse_pos = mouse_position();
+        let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
         game.bullets
-            .push(Bullet::new(game.player.position, &game.player.texture))
+            .push(Bullet::new(game.player.position, &game.player.texture, mouse_target, true))
     }
+
+    for bullet in game.bullets.iter_mut(){
+        let direction = bullet.target - bullet.position;
+        
+        if bullet.is_active{
+            bullet.position += direction.normalize() * 2.0;
+        }
+
+        if bullet.position == bullet.target{
+            println!("yeet");
+            bullet.is_active = false;
+        }
+
+        println!("{}", bullet.position);
+    }
+
+    game.bullets.retain(|bullet| bullet.is_active == true);
 }
 
 fn player_update(game: &mut Game) {
