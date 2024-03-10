@@ -103,6 +103,7 @@ fn update(game: &mut Game) {
     player_update(game);
     bullet_update(game);
     enemy_update(game);
+    collision_check(game);
 }
 
 fn bullet_update(game: &mut Game) {
@@ -128,9 +129,22 @@ fn bullet_update(game: &mut Game) {
         if bullet.position.y > screen_height() || bullet.position.y < 0.0 {
             bullet.is_active = false;
         }
+
+        bullet.coll_rect.x = bullet.position.x;
+        bullet.coll_rect.y = bullet.position.y;
     }
 
     game.bullets.retain(|bullet| bullet.is_active == true);
+}
+
+fn collision_check(game: &mut Game) {
+    for enemy in game.enemies.iter_mut() {
+        for bullet in game.bullets.iter_mut() {
+            if enemy.coll_rect.overlaps(&bullet.coll_rect) {
+                bullet.is_active = false;
+            }
+        }
+    }
 }
 
 fn player_update(game: &mut Game) {
