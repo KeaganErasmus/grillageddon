@@ -82,6 +82,7 @@ async fn init_game() -> Game {
                 rand::gen_range(0, screen_height() as i32) as f32,
             ),
             &enemy_texture,
+            10
         ));
     }
 
@@ -142,9 +143,14 @@ fn collision_check(game: &mut Game) {
         for bullet in game.bullets.iter_mut() {
             if enemy.coll_rect.overlaps(&bullet.coll_rect) {
                 bullet.is_active = false;
+                damage_enemy(enemy);
             }
         }
     }
+}
+
+fn damage_enemy(enemy: &mut Enemy){
+    enemy.health -= 5;
 }
 
 fn player_update(game: &mut Game) {
@@ -208,7 +214,10 @@ fn enemy_update(game: &mut Game) {
         enemy.position = enemy.position + normalized_direction * enemy.speed;
         enemy.coll_rect.x = enemy.position.x;
         enemy.coll_rect.y = enemy.position.y;
+        
     }
+    
+    game.enemies.retain(|enemy| enemy.health > 0);
 }
 
 fn draw(game: &mut Game) {

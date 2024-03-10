@@ -6,15 +6,17 @@ pub struct Enemy {
     pub speed: f32,
     pub texture: Texture2D,
     pub coll_rect: Rect,
+    pub health: i32,
 }
 
 impl Enemy {
-    pub fn new(position: Vec2, texture: &Texture2D) -> Enemy {
+    pub fn new(position: Vec2, texture: &Texture2D, health: i32) -> Enemy {
         Enemy {
             position: position,
             speed: 1.0,
             texture: texture.clone(),
             coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
+            health: health,
         }
     }
 }
