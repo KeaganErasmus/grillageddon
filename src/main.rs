@@ -2,10 +2,14 @@ mod enemy;
 mod player;
 
 use enemy::Enemy;
-use macroquad::{prelude::*, rand};
+use macroquad::{
+    prelude::*,
+    rand,
+};
 use player::Player;
 
 const MAX_ENEMIES: i32 = 2;
+const NUM_PLAYER_FRAMES: i32 = 8;
 
 pub struct Bullet {
     pub position: Vec2,
@@ -69,9 +73,10 @@ async fn main() {
 }
 
 async fn init_game() -> Game {
-    let player_texture = load_texture("assets/player.png").await.unwrap();
+    let player_texture = load_texture("assets/doc.png").await.unwrap();
+    player_texture.set_filter(FilterMode::Nearest);
     let enemy_texture = load_texture("assets/player.png").await.unwrap();
-    let player = Player::new(Vec2::new(100.0, 100.0), 3.0, &player_texture);
+    let player = Player::new(Vec2::new(100.0, 100.0), 3.0, player_texture);
     let mut enemies: Vec<Enemy> = Vec::new();
     let bullets: Vec<Bullet> = Vec::new();
 
@@ -82,7 +87,7 @@ async fn init_game() -> Game {
                 rand::gen_range(0, screen_height() as i32) as f32,
             ),
             &enemy_texture,
-            10
+            10,
         ));
     }
 
@@ -149,13 +154,17 @@ fn collision_check(game: &mut Game) {
     }
 }
 
-fn damage_enemy(enemy: &mut Enemy){
+fn damage_enemy(enemy: &mut Enemy) {
     enemy.health -= 5;
 }
 
 fn player_update(game: &mut Game) {
     let mut movement = Vec2::default();
-
+    game.player.frame_time += get_frame_time();
+    if game.player.frame_time >= 0.1 {
+        game.player.fram_index = (game.player.fram_index + 1) % NUM_PLAYER_FRAMES;
+        game.player.frame_time = 0.0;
+    }
     if is_key_down(KeyCode::A) {
         movement.x -= 1.0;
     }
@@ -214,12 +223,10 @@ fn enemy_update(game: &mut Game) {
         enemy.position = enemy.position + normalized_direction * enemy.speed;
         enemy.coll_rect.x = enemy.position.x;
         enemy.coll_rect.y = enemy.position.y;
-        
     }
-    
+
     game.enemies.retain(|enemy| enemy.health > 0);
 }
-
 fn draw(game: &mut Game) {
     for bullet in game.bullets.iter_mut() {
         draw_texture(&bullet.texture, bullet.position.x, bullet.position.y, BLACK);
@@ -229,11 +236,20 @@ fn draw(game: &mut Game) {
         draw_texture(&enemy.texture, enemy.position.x, enemy.position.y, RED);
     }
 
-    draw_texture(
+    draw_texture_ex(
         &game.player.texture,
         game.player.position.x,
         game.player.position.y,
         WHITE,
+        DrawTextureParams {
+            source: Some(Rect::new(
+                game.player.fram_index as f32 * 16.0,
+                0.0,
+                16.0,
+                32.0,
+            )),
+            ..Default::default()
+        },
     );
 }
 
