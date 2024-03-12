@@ -6,7 +6,7 @@ use macroquad::{
     prelude::*,
     rand,
 };
-use player::Player;
+use player::{Direction, Player};
 
 const MAX_ENEMIES: i32 = 2;
 const NUM_PLAYER_FRAMES: i32 = 8;
@@ -158,19 +158,28 @@ fn damage_enemy(enemy: &mut Enemy) {
     enemy.health -= 5;
 }
 
-fn player_update(game: &mut Game) {
-    let mut movement = Vec2::default();
+fn animate_player(game: &mut Game){
     game.player.frame_time += get_frame_time();
     if game.player.frame_time >= 0.1 {
         game.player.fram_index = (game.player.fram_index + 1) % NUM_PLAYER_FRAMES;
         game.player.frame_time = 0.0;
     }
+}
+
+fn player_update(game: &mut Game) {
+    let mut movement = Vec2::default();
+
+
     if is_key_down(KeyCode::A) {
         movement.x -= 1.0;
+        game.player.dir = Direction::Left;
+        animate_player(game);
     }
 
     if is_key_down(KeyCode::D) {
         movement.x += 1.0;
+        game.player.dir = Direction::Right;
+        animate_player(game);
     }
 
     if is_key_down(KeyCode::W) {
@@ -236,6 +245,12 @@ fn draw(game: &mut Game) {
         draw_texture(&enemy.texture, enemy.position.x, enemy.position.y, RED);
     }
 
+    let mut flip = false;
+    match game.player.dir {
+        Direction::Left => {flip = true},
+        Direction::Right => {flip = false}
+    }
+
     draw_texture_ex(
         &game.player.texture,
         game.player.position.x,
@@ -248,6 +263,7 @@ fn draw(game: &mut Game) {
                 16.0,
                 32.0,
             )),
+            flip_x: flip,
             ..Default::default()
         },
     );

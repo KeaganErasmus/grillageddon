@@ -1,5 +1,10 @@
 use macroquad::prelude::*;
 
+pub enum Direction {
+    Left,
+    Right
+}
+
 pub struct Player {
     pub position: Vec2,
     pub speed: f32,
@@ -7,6 +12,7 @@ pub struct Player {
     pub coll_rect: Rect,
     pub fram_index: i32,
     pub frame_time: f32,
+    pub dir: Direction
 }
 
 impl Player {
@@ -18,6 +24,7 @@ impl Player {
             coll_rect: Rect::new(position.x, position.y, 32.0, 32.0),
             fram_index: 0,
             frame_time: 0.0,
+            dir: Direction::Right
         }
     }
 }
