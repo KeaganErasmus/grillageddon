@@ -7,7 +7,7 @@ use enemy::Enemy;
 use macroquad::{prelude::*, rand};
 use player::{Direction, Player};
 
-const MAX_ENEMIES: i32 = 2;
+const MAX_ENEMIES: i32 = 1000;
 const NUM_PLAYER_FRAMES: i32 = 8;
 
 pub enum GameState {
@@ -45,7 +45,7 @@ async fn init_game() -> Game {
     let player_texture = load_texture("assets/doc.png").await.unwrap();
     player_texture.set_filter(FilterMode::Nearest);
     let player = Player::new(Vec2::new(100.0, 100.0), 3.0, player_texture);
-    
+
     let enemy_texture = load_texture("assets/player.png").await.unwrap();
     let mut enemies: Vec<Enemy> = Vec::new();
 
@@ -87,13 +87,15 @@ async fn bullet_update(game: &mut Game) {
     if is_mouse_button_pressed(MouseButton::Left) {
         let mouse_pos = mouse_position();
         let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
-        game.bullets.push(Bullet::new(
-            Vec2::new(game.player.position.x, game.player.position.y + 16.),
-            &game.player.texture,
-            mouse_target,
-            true,
-            3.0,
-        ).await)
+        game.bullets.push(
+            Bullet::new(
+                Vec2::new(game.player.position.x, game.player.position.y + 16.),
+                mouse_target,
+                true,
+                3.0,
+            )
+            .await,
+        )
     }
 
     for bullet in game.bullets.iter_mut() {
