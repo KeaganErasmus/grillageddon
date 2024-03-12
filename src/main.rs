@@ -7,7 +7,7 @@ use enemy::Enemy;
 use macroquad::{prelude::*, rand};
 use player::{Direction, Player};
 
-const MAX_ENEMIES: i32 = 1000;
+const MAX_ENEMIES: i32 = 500;
 const NUM_PLAYER_FRAMES: i32 = 8;
 
 pub enum GameState {
@@ -23,7 +23,16 @@ pub struct Game {
     bullets: Vec<Bullet>,
 }
 
-#[macroquad::main("Grillageddon")]
+fn window_conf() -> Conf {
+    Conf {
+        window_title: "Grillageddon".to_owned(),
+        window_width: 800,
+        window_height: 600,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_conf)]
 async fn main() {
     let mut game = init_game().await;
     loop {
@@ -147,19 +156,21 @@ fn player_update(game: &mut Game) {
         game.player.dir = Direction::Left;
         animate_player(game);
     }
-
+    
     if is_key_down(KeyCode::D) {
         movement.x += 1.0;
         game.player.dir = Direction::Right;
         animate_player(game);
     }
-
+    
     if is_key_down(KeyCode::W) {
         movement.y -= 1.0;
+        animate_player(game);
     }
-
+    
     if is_key_down(KeyCode::S) {
         movement.y += 1.0;
+        animate_player(game);
     }
 
     if movement.length() > 1.0 {
