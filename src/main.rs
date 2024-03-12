@@ -1,45 +1,14 @@
+mod bullet;
 mod enemy;
 mod player;
 
+use bullet::Bullet;
 use enemy::Enemy;
-use macroquad::{
-    prelude::*,
-    rand,
-};
+use macroquad::{prelude::*, rand};
 use player::{Direction, Player};
 
 const MAX_ENEMIES: i32 = 2;
 const NUM_PLAYER_FRAMES: i32 = 8;
-
-pub struct Bullet {
-    pub position: Vec2,
-    pub texture: Texture2D,
-    pub coll_rect: Rect,
-    pub target: Vec2,
-    pub is_active: bool,
-    pub velocity: Vec2,
-    pub speed: f32,
-}
-impl Bullet {
-    pub fn new(
-        position: Vec2,
-        texture: &Texture2D,
-        target: Vec2,
-        is_active: bool,
-        speed: f32,
-    ) -> Bullet {
-        let direction = target - position;
-        Bullet {
-            position: position,
-            texture: texture.clone(),
-            coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
-            target: target,
-            is_active: is_active,
-            velocity: direction.normalize(),
-            speed: speed,
-        }
-    }
-}
 
 pub enum GameState {
     Pause,
@@ -158,7 +127,7 @@ fn damage_enemy(enemy: &mut Enemy) {
     enemy.health -= 5;
 }
 
-fn animate_player(game: &mut Game){
+fn animate_player(game: &mut Game) {
     game.player.frame_time += get_frame_time();
     if game.player.frame_time >= 0.1 {
         game.player.fram_index = (game.player.fram_index + 1) % NUM_PLAYER_FRAMES;
@@ -168,7 +137,6 @@ fn animate_player(game: &mut Game){
 
 fn player_update(game: &mut Game) {
     let mut movement = Vec2::default();
-
 
     if is_key_down(KeyCode::A) {
         movement.x -= 1.0;
@@ -247,8 +215,8 @@ fn draw(game: &mut Game) {
 
     let mut flip = false;
     match game.player.dir {
-        Direction::Left => {flip = true},
-        Direction::Right => {flip = false}
+        Direction::Left => flip = true,
+        Direction::Right => flip = false,
     }
 
     draw_texture_ex(
