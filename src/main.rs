@@ -218,7 +218,7 @@ fn draw(game: &mut Game) {
         draw_texture(&enemy.texture, enemy.position.x, enemy.position.y, RED);
     }
 
-    let mut flip = false;
+    let flip;
     match game.player.dir {
         Direction::Left => flip = true,
         Direction::Right => flip = false,
@@ -233,7 +233,7 @@ fn draw(game: &mut Game) {
             source: Some(Rect::new(
                 game.player.fram_index as f32 * 16.0,
                 0.0,
-                16.0,
+                15.0,
                 32.0,
             )),
             flip_x: flip,
