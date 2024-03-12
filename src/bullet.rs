@@ -10,17 +10,18 @@ pub struct Bullet {
     pub speed: f32,
 }
 impl Bullet {
-    pub fn new(
+    pub async fn new(
         position: Vec2,
         texture: &Texture2D,
         target: Vec2,
         is_active: bool,
         speed: f32,
     ) -> Bullet {
+        let bullet_texture = load_texture("assets/bullet.png").await.unwrap();
         let direction = target - position;
         Bullet {
             position: position,
-            texture: texture.clone(),
+            texture: bullet_texture,
             coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
             target: target,
             is_active: is_active,

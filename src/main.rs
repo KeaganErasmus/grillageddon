@@ -30,7 +30,7 @@ async fn main() {
         clear_background(WHITE);
         match game.state {
             GameState::Play => {
-                update(&mut game);
+                update(&mut game).await;
                 draw(&mut game);
             }
             GameState::Pause => menu(&mut game),
@@ -44,9 +44,11 @@ async fn main() {
 async fn init_game() -> Game {
     let player_texture = load_texture("assets/doc.png").await.unwrap();
     player_texture.set_filter(FilterMode::Nearest);
-    let enemy_texture = load_texture("assets/player.png").await.unwrap();
     let player = Player::new(Vec2::new(100.0, 100.0), 3.0, player_texture);
+    
+    let enemy_texture = load_texture("assets/player.png").await.unwrap();
     let mut enemies: Vec<Enemy> = Vec::new();
+
     let bullets: Vec<Bullet> = Vec::new();
 
     for _ in 0..MAX_ENEMIES {
@@ -68,7 +70,7 @@ async fn init_game() -> Game {
     }
 }
 
-fn update(game: &mut Game) {
+async fn update(game: &mut Game) {
     if is_key_pressed(KeyCode::Escape) {
         game.state = GameState::Pause;
     }
@@ -76,22 +78,22 @@ fn update(game: &mut Game) {
     if is_mouse_button_down(MouseButton::Left) {}
 
     player_update(game);
-    bullet_update(game);
+    bullet_update(game).await;
     enemy_update(game);
     collision_check(game);
 }
 
-fn bullet_update(game: &mut Game) {
+async fn bullet_update(game: &mut Game) {
     if is_mouse_button_pressed(MouseButton::Left) {
         let mouse_pos = mouse_position();
         let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
         game.bullets.push(Bullet::new(
-            game.player.position,
+            Vec2::new(game.player.position.x, game.player.position.y + 16.),
             &game.player.texture,
             mouse_target,
             true,
             3.0,
-        ))
+        ).await)
     }
 
     for bullet in game.bullets.iter_mut() {
@@ -204,6 +206,7 @@ fn enemy_update(game: &mut Game) {
 
     game.enemies.retain(|enemy| enemy.health > 0);
 }
+
 fn draw(game: &mut Game) {
     for bullet in game.bullets.iter_mut() {
         draw_texture(&bullet.texture, bullet.position.x, bullet.position.y, BLACK);
