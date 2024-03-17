@@ -7,7 +7,7 @@ use enemy::Enemy;
 use macroquad::{prelude::*, rand};
 use player::{Direction, Player};
 
-const MAX_ENEMIES: i32 = 500;
+const MAX_ENEMIES: i32 = 10;
 const NUM_PLAYER_FRAMES: i32 = 8;
 
 pub enum GameState {
@@ -42,7 +42,7 @@ async fn main() {
                 update(&mut game).await;
                 draw(&mut game);
             }
-            GameState::Pause => menu(&mut game),
+            GameState::Pause => menu(&mut game).await,
             GameState::Over => todo!(),
             GameState::Start => todo!(),
         }
@@ -72,7 +72,7 @@ async fn init_game() -> Game {
     }
 
     Game {
-        state: GameState::Play,
+        state: GameState::Pause,
         player: player,
         enemies: enemies,
         bullets: bullets,
@@ -156,18 +156,18 @@ fn player_update(game: &mut Game) {
         game.player.dir = Direction::Left;
         animate_player(game);
     }
-    
+
     if is_key_down(KeyCode::D) {
         movement.x += 1.0;
         game.player.dir = Direction::Right;
         animate_player(game);
     }
-    
+
     if is_key_down(KeyCode::W) {
         movement.y -= 1.0;
         animate_player(game);
     }
-    
+
     if is_key_down(KeyCode::S) {
         movement.y += 1.0;
         animate_player(game);
@@ -253,11 +253,33 @@ fn draw(game: &mut Game) {
     );
 }
 
-fn menu(game: &mut Game) {
+async fn menu(game: &mut Game) {
     match game.state {
         GameState::Pause => {
+            let play_item = MenuItem::new("Play".to_owned(), Vec2::new(300., 200.), 100, BLUE);
             clear_background(WHITE);
-            draw_text("Game is paused", 100.0, 100.0, 100.0, BLACK);
+            draw_text_ex(
+                "Game is Paused",
+                100.0,
+                100.0,
+                TextParams {
+                    font_size: 100,
+                    color: BLACK,
+                    ..Default::default()
+                },
+            );
+            // Draw the play button
+            draw_text_ex(
+                &play_item.text,
+                play_item.pos.x,
+                play_item.pos.y,
+                TextParams {
+                    font_size: play_item.font_size,
+                    color: play_item.font_colour,
+                    ..Default::default()
+                },
+            );
+            
             if is_key_pressed(KeyCode::Escape) {
                 game.state = GameState::Play;
             }
@@ -266,4 +288,23 @@ fn menu(game: &mut Game) {
         GameState::Over => todo!(),
         GameState::Start => todo!(),
     };
+}
+
+pub struct MenuItem {
+    text: String,
+    pos: Vec2,
+    font_size: u16,
+    font_colour: Color,
+    rect: Rect,
+}
+impl MenuItem {
+    pub fn new(text: String, pos: Vec2, font_size: u16, font_colour: Color) -> MenuItem {
+        MenuItem {
+            text: text,
+            pos: pos,
+            font_size: font_size,
+            font_colour: font_colour,
+            rect: Rect::new(pos.x, pos.y, font_size as f32, font_size as f32),
+        }
+    }
 }
