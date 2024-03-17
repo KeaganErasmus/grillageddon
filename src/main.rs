@@ -21,6 +21,7 @@ pub struct Game {
     player: Player,
     enemies: Vec<Enemy>,
     bullets: Vec<Bullet>,
+    spawn_point: Vec<SpawnPoint>
 }
 
 fn window_conf() -> Conf {
@@ -60,6 +61,25 @@ async fn init_game() -> Game {
 
     let bullets: Vec<Bullet> = Vec::new();
 
+    let spawn_point_texture = load_texture("assets/spawn_point.png").await.unwrap();
+    let mut spawn_points: Vec<SpawnPoint> = Vec::new();
+    spawn_points.push(SpawnPoint {
+        pos: Vec2::new(10.0, 10.0),
+        texture: spawn_point_texture.clone()
+    });
+    spawn_points.push(SpawnPoint {
+        pos: Vec2::new(750.0, 10.0),
+        texture: spawn_point_texture.clone()
+    });
+    spawn_points.push(SpawnPoint {
+        pos: Vec2::new(10.0, 550.0),
+        texture: spawn_point_texture.clone()
+    });
+    spawn_points.push(SpawnPoint {
+        pos: Vec2::new(750.0, 550.0),
+        texture: spawn_point_texture.clone()
+    });
+
     for _ in 0..MAX_ENEMIES {
         enemies.push(Enemy::new(
             Vec2::new(
@@ -72,10 +92,11 @@ async fn init_game() -> Game {
     }
 
     Game {
-        state: GameState::Pause,
+        state: GameState::Play,
         player: player,
         enemies: enemies,
         bullets: bullets,
+        spawn_point: spawn_points
     }
 }
 
@@ -221,6 +242,10 @@ fn enemy_update(game: &mut Game) {
 }
 
 fn draw(game: &mut Game) {
+    for point in game.spawn_point.iter(){
+        draw_texture(&point.texture, point.pos.x, point.pos.y, WHITE);
+    }
+
     for bullet in game.bullets.iter_mut() {
         draw_texture(&bullet.texture, bullet.position.x, bullet.position.y, BLACK);
     }
@@ -288,6 +313,19 @@ async fn menu(game: &mut Game) {
         GameState::Over => todo!(),
         GameState::Start => todo!(),
     };
+}
+
+pub struct SpawnPoint {
+    pos: Vec2,
+    texture: Texture2D
+}
+impl SpawnPoint {
+    pub fn new(pos: Vec2, texture: Texture2D) -> SpawnPoint {
+        SpawnPoint {
+            pos: pos, 
+            texture: texture.clone()
+        }
+    }
 }
 
 pub struct MenuItem {
