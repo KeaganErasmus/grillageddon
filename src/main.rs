@@ -116,7 +116,6 @@ async fn update(game: &mut Game) {
         game.state = GameState::Pause;
     }
 
-    if is_mouse_button_down(MouseButton::Left) {}
     spawn_enemies(game);
     player_update(game);
     bullet_update(game).await;
@@ -154,7 +153,7 @@ async fn bullet_update(game: &mut Game) {
         bullet.coll_rect.y = bullet.position.y;
     }
 
-    game.bullets.retain(|bullet| bullet.is_active == true);
+    game.bullets.retain(|bullet| bullet.is_active);
 }
 
 fn collision_check(game: &mut Game) {
@@ -244,9 +243,9 @@ fn enemy_update(game: &mut Game) {
             }
         }
 
-        enemy.position = enemy.position + normalized_direction * enemy.speed;
-        enemy.coll_rect.x = enemy.position.x;
-        enemy.coll_rect.y = enemy.position.y;
+        enemy.position    += normalized_direction * enemy.speed;
+        enemy.coll_rect.x =  enemy.position.x;
+        enemy.coll_rect.y =  enemy.position.y;
     }
 
     game.enemies.retain(|enemy| enemy.health > 0);
