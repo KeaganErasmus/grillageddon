@@ -22,8 +22,11 @@ pub struct Game {
     state: GameState,
     player: Player,
     enemies: Vec<Enemy>,
+    enemy_texture: Texture2D,
     bullets: Vec<Bullet>,
     spawn_point: Vec<SpawnPoint>,
+    last_spawn: f64,
+    spawn_rate: f64
 }
 
 fn window_conf() -> Conf {
@@ -81,35 +84,33 @@ async fn init_game() -> Game {
         pos: Vec2::new(750.0, 550.0),
         texture: spawn_point_texture.clone(),
     });
-    // Vec2::new(
-    //     rand::gen_range(0, screen_width() as i32) as f32,
-    //     rand::gen_range(0, screen_height() as i32) as f32,
-    // ),
-
-    for _ in 0..MAX_ENEMIES {
-        // let spawn_point = &spawn_points[rand::gen_range(0, spawn_points.len())];
-        // let enemy_pos = spawn_point.pos;
-        enemies.push(Enemy::new(
-            // enemy_pos,
-            Vec2::new(
-                rand::gen_range(0, screen_width() as i32) as f32,
-                rand::gen_range(0, screen_height() as i32) as f32,
-            ),
-            &enemy_texture,
-            10,
-        ));
-    }
 
     Game {
         state: GameState::Play,
         player: player,
         enemies: enemies,
+        enemy_texture: enemy_texture,
         bullets: bullets,
         spawn_point: spawn_points,
+        last_spawn: get_time(),
+        spawn_rate: 0.5
     }
 }
 
-fn spawn_enemies(game: &mut Game) {}
+fn spawn_enemies(game: &mut Game) {
+    let spawn_timer = get_time();
+    
+    if spawn_timer - game.last_spawn > game.spawn_rate {
+    let spawn_point = &game.spawn_point[rand::gen_range(0, game.spawn_point.len())];
+    let enemy_pos = spawn_point.pos;
+        game.enemies.push(Enemy::new(
+            enemy_pos,
+            &game.enemy_texture,
+            10,
+        ));
+        game.last_spawn = spawn_timer;
+    }
+}
 
 async fn update(game: &mut Game) {
     if is_key_pressed(KeyCode::Escape) {
