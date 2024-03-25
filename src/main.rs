@@ -7,7 +7,7 @@ use macroquad::prelude::*;
 
 use bullet::Bullet;
 use enemy::Enemy;
-use player::{Direction, Player};
+use player::{Direction, Player, WeaponType};
 
 const MAX_ENEMIES: i32 = 10;
 const NUM_PLAYER_FRAMES: i32 = 8;
@@ -26,7 +26,7 @@ pub struct Game {
     bullets: Vec<Bullet>,
     spawn_point: Vec<SpawnPoint>,
     last_spawn: f64,
-    spawn_rate: f64
+    spawn_rate: f64,
 }
 
 fn window_conf() -> Conf {
@@ -58,11 +58,10 @@ async fn main() {
 
 async fn init_game() -> Game {
     let player_texture = load_texture("assets/player.png").await.unwrap();
-    // player_texture.set_filter(FilterMode::Nearest);
     let player = Player::new(Vec2::new(100.0, 100.0), 3.0, player_texture);
 
     let enemy_texture = load_texture("assets/enemy.png").await.unwrap();
-    let mut enemies: Vec<Enemy> = Vec::new();
+    let enemies: Vec<Enemy> = Vec::new();
 
     let bullets: Vec<Bullet> = Vec::new();
 
@@ -93,21 +92,18 @@ async fn init_game() -> Game {
         bullets: bullets,
         spawn_point: spawn_points,
         last_spawn: get_time(),
-        spawn_rate: 0.5
+        spawn_rate: 0.5,
     }
 }
 
 fn spawn_enemies(game: &mut Game) {
     let spawn_timer = get_time();
-    
+
     if spawn_timer - game.last_spawn > game.spawn_rate {
-    let spawn_point = &game.spawn_point[rand::gen_range(0, game.spawn_point.len())];
-    let enemy_pos = spawn_point.pos;
-        game.enemies.push(Enemy::new(
-            enemy_pos,
-            &game.enemy_texture,
-            10,
-        ));
+        let spawn_point = &game.spawn_point[rand::gen_range(0, game.spawn_point.len())];
+        let enemy_pos = spawn_point.pos;
+        game.enemies
+            .push(Enemy::new(enemy_pos, &game.enemy_texture, 10));
         game.last_spawn = spawn_timer;
     }
 }
@@ -125,18 +121,65 @@ async fn update(game: &mut Game) {
 }
 
 async fn bullet_update(game: &mut Game) {
-    if is_mouse_button_pressed(MouseButton::Left) {
-        let mouse_pos = mouse_position();
-        let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
-        game.bullets.push(
-            Bullet::new(
-                Vec2::new(game.player.position.x, game.player.position.y + 16.),
-                mouse_target,
-                true,
-                3.0,
-            )
-            .await,
-        )
+    let current_time = get_time();
+
+    match game.player.weapon_type {
+        WeaponType::Pistol => {
+            if is_mouse_button_pressed(MouseButton::Left) {
+                let mouse_pos = mouse_position();
+                let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
+                game.bullets.push(
+                    Bullet::new(
+                        Vec2::new(game.player.position.x, game.player.position.y + 16.),
+                        mouse_target,
+                        true,
+                        3.0,
+                    )
+                    .await,
+                )
+            }
+        }
+        WeaponType::Machine => {
+            if is_mouse_button_down(MouseButton::Left)
+                && current_time - game.player.last_shot > game.player.fire_rate
+            {
+                let mouse_pos = mouse_position();
+                let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
+                game.bullets.push(
+                    Bullet::new(
+                        Vec2::new(game.player.position.x, game.player.position.y + 16.),
+                        mouse_target,
+                        true,
+                        3.0,
+                    )
+                    .await,
+                );
+                game.player.last_shot = current_time;
+            }
+        }
+        WeaponType::Shotgun => {
+            if is_mouse_button_pressed(MouseButton::Left) {
+                let player_pos = Vec2::new(game.player.position.x, game.player.position.y + 16.); // Adjust as needed
+                let mouse_pos = mouse_position();
+                let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
+                let spread_angle: f64 = 30.0;
+
+                let mouse_direction = (mouse_target - player_pos).normalize(); // Calculate direction to mouse
+                let base_angle = mouse_direction.y.atan2(mouse_direction.x); // Calculate base angle
+
+                let spread_increment = spread_angle.to_radians() / (4 - 1) as f64;
+
+                for i in 0..4 {
+                    let angle = base_angle
+                        + (-spread_angle.to_radians() as f32 / 2.0
+                            + spread_increment as f32 * i as f32);
+                    let bullet_direction = Vec2::new(angle.cos() as f32, angle.sin() as f32);
+                    let bullet_target = player_pos + bullet_direction * 100.0;
+                    game.bullets
+                        .push(Bullet::new(player_pos, bullet_target, true, 3.0).await);
+                }
+            }
+        }
     }
 
     for bullet in game.bullets.iter_mut() {
@@ -182,6 +225,17 @@ fn animate_player(game: &mut Game) {
 
 fn player_update(game: &mut Game) {
     let mut movement = Vec2::default();
+    if is_key_pressed(KeyCode::Key1) {
+        game.player.weapon_type = WeaponType::Pistol
+    }
+
+    if is_key_pressed(KeyCode::Key2) {
+        game.player.weapon_type = WeaponType::Machine
+    }
+
+    if is_key_pressed(KeyCode::Key3) {
+        game.player.weapon_type = WeaponType::Shotgun
+    }
 
     if is_key_down(KeyCode::A) {
         movement.x -= 1.0;
@@ -244,9 +298,9 @@ fn enemy_update(game: &mut Game) {
             }
         }
 
-        enemy.position    += normalized_direction * enemy.speed;
-        enemy.coll_rect.x =  enemy.position.x;
-        enemy.coll_rect.y =  enemy.position.y;
+        enemy.position += normalized_direction * enemy.speed;
+        enemy.coll_rect.x = enemy.position.x;
+        enemy.coll_rect.y = enemy.position.y;
     }
 
     game.enemies.retain(|enemy| enemy.health > 0);
