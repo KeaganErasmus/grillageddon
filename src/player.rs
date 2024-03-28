@@ -22,6 +22,7 @@ pub struct Player {
     pub weapon_type: WeaponType,
     pub last_shot: f64,
     pub fire_rate: f64,
+    pub shotgun_fire_rate: f64,
 }
 
 impl Player {
@@ -37,6 +38,7 @@ impl Player {
             weapon_type: WeaponType::Pistol,
             last_shot: get_time(),
             fire_rate: 0.2,
+            shotgun_fire_rate: 0.9,
         }
     }
 }

@@ -158,26 +158,28 @@ async fn bullet_update(game: &mut Game) {
             }
         }
         WeaponType::Shotgun => {
-            if is_mouse_button_pressed(MouseButton::Left) {
+            if is_mouse_button_down(MouseButton::Left) && current_time - game.player.last_shot > game.player.shotgun_fire_rate {
                 let player_pos = Vec2::new(game.player.position.x, game.player.position.y + 16.); // Adjust as needed
                 let mouse_pos = mouse_position();
                 let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
-                let spread_angle: f64 = 30.0;
+                let spread_angle: f64 = 15.0;
 
                 let mouse_direction = (mouse_target - player_pos).normalize(); // Calculate direction to mouse
                 let base_angle = mouse_direction.y.atan2(mouse_direction.x); // Calculate base angle
 
                 let spread_increment = spread_angle.to_radians() / (4 - 1) as f64;
 
-                for i in 0..4 {
+                for i in 0..3 {
                     let angle = base_angle
                         + (-spread_angle.to_radians() as f32 / 2.0
                             + spread_increment as f32 * i as f32);
                     let bullet_direction = Vec2::new(angle.cos() as f32, angle.sin() as f32);
                     let bullet_target = player_pos + bullet_direction * 100.0;
                     game.bullets
-                        .push(Bullet::new(player_pos, bullet_target, true, 3.0).await);
+                        .push(Bullet::new(player_pos, bullet_target, true, 7.0).await);
                 }
+
+                game.player.last_shot = current_time
             }
         }
     }
