@@ -9,9 +9,6 @@ use bullet::Bullet;
 use enemy::Enemy;
 use player::{Direction, Player, WeaponType};
 
-const MAX_ENEMIES: i32 = 10;
-const NUM_PLAYER_FRAMES: i32 = 8;
-
 pub enum GameState {
     Pause,
     Play,
@@ -158,8 +155,10 @@ async fn bullet_update(game: &mut Game) {
             }
         }
         WeaponType::Shotgun => {
-            if is_mouse_button_down(MouseButton::Left) && current_time - game.player.last_shot > game.player.shotgun_fire_rate {
-                let player_pos = Vec2::new(game.player.position.x, game.player.position.y + 16.); // Adjust as needed
+            if is_mouse_button_down(MouseButton::Left)
+                && current_time - game.player.last_shot > game.player.shotgun_fire_rate
+            {
+                let player_pos = Vec2::new(game.player.position.x, game.player.position.y + 16.);
                 let mouse_pos = mouse_position();
                 let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
                 let spread_angle: f64 = 15.0;
@@ -167,7 +166,7 @@ async fn bullet_update(game: &mut Game) {
                 let mouse_direction = (mouse_target - player_pos).normalize(); // Calculate direction to mouse
                 let base_angle = mouse_direction.y.atan2(mouse_direction.x); // Calculate base angle
 
-                let spread_increment = spread_angle.to_radians() / (4 - 1) as f64;
+                let spread_increment = spread_angle.to_radians() / (3 - 1) as f64;
 
                 for i in 0..3 {
                     let angle = base_angle
@@ -207,22 +206,20 @@ fn collision_check(game: &mut Game) {
         for bullet in game.bullets.iter_mut() {
             if enemy.coll_rect.overlaps(&bullet.coll_rect) {
                 bullet.is_active = false;
-                damage_enemy(enemy);
+                let dmg: i32;
+                match game.player.weapon_type {
+                    WeaponType::Pistol => dmg = 5,
+                    WeaponType::Machine => dmg = 3,
+                    WeaponType::Shotgun => dmg = 5,
+                }
+                damage_enemy(enemy, dmg);
             }
         }
     }
 }
 
-fn damage_enemy(enemy: &mut Enemy) {
-    enemy.health -= 5;
-}
-
-fn animate_player(game: &mut Game) {
-    game.player.frame_time += get_frame_time();
-    if game.player.frame_time >= 0.1 {
-        game.player.fram_index = (game.player.fram_index + 1) % NUM_PLAYER_FRAMES;
-        game.player.frame_time = 0.0;
-    }
+fn damage_enemy(enemy: &mut Enemy, dmg: i32) {
+    enemy.health -= dmg;
 }
 
 fn player_update(game: &mut Game) {
@@ -242,23 +239,19 @@ fn player_update(game: &mut Game) {
     if is_key_down(KeyCode::A) {
         movement.x -= 1.0;
         game.player.dir = Direction::Left;
-        animate_player(game);
     }
 
     if is_key_down(KeyCode::D) {
         movement.x += 1.0;
         game.player.dir = Direction::Right;
-        animate_player(game);
     }
 
     if is_key_down(KeyCode::W) {
         movement.y -= 1.0;
-        animate_player(game);
     }
 
     if is_key_down(KeyCode::S) {
         movement.y += 1.0;
-        animate_player(game);
     }
 
     if movement.length() > 1.0 {
