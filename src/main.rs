@@ -143,7 +143,7 @@ async fn bullet_update(game: &mut Game) {
                         Vec2::new(game.player.position.x, game.player.position.y + 16.),
                         mouse_target,
                         true,
-                        3.0,
+                        5.0,
                     )
                     .await,
                 )
@@ -160,7 +160,7 @@ async fn bullet_update(game: &mut Game) {
                         Vec2::new(game.player.position.x, game.player.position.y + 16.),
                         mouse_target,
                         true,
-                        3.0,
+                        7.0,
                     )
                     .await,
                 );
@@ -174,7 +174,7 @@ async fn bullet_update(game: &mut Game) {
                 let player_pos = Vec2::new(game.player.position.x, game.player.position.y + 16.);
                 let mouse_pos = mouse_position();
                 let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
-                let spread_angle: f64 = 15.0;
+                let spread_angle: f64 = 20.0;
 
                 let mouse_direction = (mouse_target - player_pos).normalize(); // Calculate direction to mouse
                 let base_angle = mouse_direction.y.atan2(mouse_direction.x); // Calculate base angle

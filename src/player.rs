@@ -37,7 +37,7 @@ impl Player {
             dir: Direction::Right,
             weapon_type: WeaponType::Pistol,
             last_shot: get_time(),
-            fire_rate: 0.2,
+            fire_rate: 0.1,
             shotgun_fire_rate: 0.9,
         }
     }
