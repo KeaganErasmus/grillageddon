@@ -15,6 +15,9 @@ pub enum GameState {
     Over,
     Start,
 }
+
+const MAX_ENEMIES: usize = 100;
+
 pub struct Game {
     state: GameState,
     player: Player,
@@ -106,8 +109,7 @@ async fn init_game() -> Game {
 
 fn spawn_enemies(game: &mut Game) {
     let spawn_timer = get_time();
-
-    if spawn_timer - game.last_spawn > game.spawn_rate {
+    if spawn_timer - game.last_spawn > game.spawn_rate && game.enemies.len() < MAX_ENEMIES {
         let spawn_point = &game.spawn_point[rand::gen_range(0, game.spawn_point.len())];
         let enemy_pos = spawn_point.pos;
         game.enemies
