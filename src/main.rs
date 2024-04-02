@@ -3,7 +3,7 @@ mod enemy;
 mod player;
 
 use libm::atan2;
-use macroquad::prelude::*;
+use macroquad::{miniquad::TextureParams, prelude::*};
 
 use bullet::Bullet;
 use enemy::Enemy;
@@ -24,6 +24,7 @@ pub struct Game {
     spawn_point: Vec<SpawnPoint>,
     last_spawn: f64,
     spawn_rate: f64,
+    ui_assets: Vec<Texture2D>,
 }
 
 fn window_conf() -> Conf {
@@ -81,6 +82,15 @@ async fn init_game() -> Game {
         texture: spawn_point_texture.clone(),
     });
 
+    let pistol_textrue = load_texture("assets/pistol.png").await.unwrap();
+    let shotgun_texture = load_texture("assets/shotgun.png").await.unwrap();
+    let machinegun_texture = load_texture("assets/machine_gun.png").await.unwrap();
+
+    let mut assets = Vec::new();
+    assets.push(pistol_textrue);
+    assets.push(shotgun_texture);
+    assets.push(machinegun_texture);
+
     Game {
         state: GameState::Play,
         player: player,
@@ -90,6 +100,7 @@ async fn init_game() -> Game {
         spawn_point: spawn_points,
         last_spawn: get_time(),
         spawn_rate: 0.5,
+        ui_assets: assets,
     }
 }
 
@@ -302,6 +313,9 @@ fn enemy_update(game: &mut Game) {
 }
 
 fn draw(game: &mut Game) {
+    // Draw the three guns at the bottom
+    draw_inventory(game);
+
     for point in game.spawn_point.iter() {
         draw_texture(&point.texture, point.pos.x, point.pos.y, WHITE);
     }
@@ -358,6 +372,38 @@ fn draw(game: &mut Game) {
             ..Default::default()
         },
     )
+}
+
+fn draw_inventory(game: &mut Game) {
+    match game.player.weapon_type {
+        WeaponType::Pistol => draw_texture_ex(
+            &game.ui_assets[0],
+            screen_width() / 2.0,
+            screen_height() - 50.0,
+            WHITE,
+            DrawTextureParams {
+                ..Default::default()
+            },
+        ),
+        WeaponType::Machine => draw_texture_ex(
+            &game.ui_assets[2],
+            screen_width() / 2.0,
+            screen_height() - 50.0,
+            WHITE,
+            DrawTextureParams {
+                ..Default::default()
+            },
+        ),
+        WeaponType::Shotgun => draw_texture_ex(
+            &game.ui_assets[1],
+            screen_width() / 2.0,
+            screen_height() - 50.0,
+            WHITE,
+            DrawTextureParams {
+                ..Default::default()
+            },
+        ),
+    }
 }
 
 async fn menu(game: &mut Game) {
