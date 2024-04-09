@@ -4,19 +4,20 @@ mod player;
 
 use libm::atan2;
 use macroquad::{
-    miniquad::{window::quit, TextureParams},
+    miniquad::window::quit,
     prelude::*,
     ui::{hash, root_ui, widgets, Skin},
 };
 
 use bullet::Bullet;
 use enemy::Enemy;
-use player::{Direction, Player, WeaponType};
+use player::{Player, WeaponType};
 
 pub enum GameState {
     Menu,
     Play,
     Options,
+    Over
 }
 
 const MAX_ENEMIES: usize = 100;
@@ -112,6 +113,7 @@ async fn main() {
             }
             GameState::Menu => menu(&mut game).await,
             GameState::Options => menu(&mut game).await,
+            GameState::Over => menu(&mut game).await
         }
         next_frame().await;
     }
@@ -197,7 +199,6 @@ async fn update(game: &mut Game) {
 }
 
 async fn bullet_update(game: &mut Game) {
-    let current_time = get_time();
 
     match game.player.weapon_type {
         WeaponType::Pistol => {
@@ -216,6 +217,7 @@ async fn bullet_update(game: &mut Game) {
             }
         }
         WeaponType::Machine => {
+            let current_time = get_time();
             if is_mouse_button_down(MouseButton::Left)
                 && current_time - game.player.last_shot > game.player.fire_rate
             {
@@ -234,6 +236,7 @@ async fn bullet_update(game: &mut Game) {
             }
         }
         WeaponType::Shotgun => {
+            let current_time = get_time();
             if is_mouse_button_down(MouseButton::Left)
                 && current_time - game.player.last_shot > game.player.shotgun_fire_rate
             {
@@ -317,12 +320,10 @@ fn player_update(game: &mut Game) {
 
     if is_key_down(KeyCode::A) {
         movement.x -= 1.0;
-        game.player.dir = Direction::Left;
     }
 
     if is_key_down(KeyCode::D) {
         movement.x += 1.0;
-        game.player.dir = Direction::Right;
     }
 
     if is_key_down(KeyCode::W) {
@@ -512,7 +513,7 @@ async fn menu(game: &mut Game) {
             );
             root_ui().pop_skin();
         }
-        GameState::Play => todo!(),
+        GameState::Play => {},
         GameState::Options => {
             root_ui().push_skin(&game.ui_skin);
             root_ui().window(
@@ -541,6 +542,34 @@ async fn menu(game: &mut Game) {
             );
             root_ui().pop_skin();
         }
+        GameState::Over => {
+            root_ui().push_skin(&game.ui_skin);
+            root_ui().window(
+                hash!(),
+                vec2(0.0 - 5., 0.0),
+                vec2(screen_width() + 5., screen_height() + 5.0),
+                |ui| {
+                    widgets::Label::new("Grillageddon")
+                        .position(vec2(260.0, 10.0))
+                        .ui(ui);
+
+                    widgets::Label::new(
+                        "You Died",
+                    )
+                    .position(vec2(100.0, 150.0))
+                    .ui(ui);
+
+                    let back_button = widgets::Button::new("Back")
+                        .position(vec2(300., 300.0))
+                        .ui(ui);
+
+                    if back_button {
+                        game.state = GameState::Menu
+                    }
+                },
+            );
+            root_ui().pop_skin();
+        },
     };
 }
 
