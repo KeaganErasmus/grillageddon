@@ -3,17 +3,20 @@ mod enemy;
 mod player;
 
 use libm::atan2;
-use macroquad::{miniquad::TextureParams, prelude::*};
+use macroquad::{
+    miniquad::{window::quit, TextureParams},
+    prelude::*,
+    ui::{hash, root_ui, widgets, Skin},
+};
 
 use bullet::Bullet;
 use enemy::Enemy;
 use player::{Direction, Player, WeaponType};
 
 pub enum GameState {
-    Pause,
+    Menu,
     Play,
-    Over,
-    Start,
+    Options,
 }
 
 const MAX_ENEMIES: usize = 100;
@@ -28,6 +31,7 @@ pub struct Game {
     last_spawn: f64,
     spawn_rate: f64,
     ui_assets: Vec<Texture2D>,
+    ui_skin: Skin,
 }
 
 fn window_conf() -> Conf {
@@ -35,10 +39,67 @@ fn window_conf() -> Conf {
         window_title: "Grillageddon".to_owned(),
         window_width: 800,
         window_height: 600,
+        window_resizable: false,
         ..Default::default()
     }
 }
+fn create_ui_skin() -> Skin {
+    let skin1: Skin = {
+        let label_style = root_ui()
+            .style_builder()
+            .background(
+                Image::from_file_with_format(include_bytes!("../assets/ui/label.png"), None)
+                    .unwrap(),
+            )
+            .background_margin(RectOffset::new(37.0, 37.0, 5.0, 5.0))
+            .margin(RectOffset::new(10.0, 10.0, 0.0, 0.0))
+            .font(include_bytes!("../assets/ui/HTOWERT.TTF"))
+            .unwrap()
+            .text_color(Color::from_rgba(0, 0, 0, 255))
+            .font_size(30)
+            .build();
 
+        let window_style = root_ui()
+            .style_builder()
+            .background(
+                Image::from_file_with_format(include_bytes!("../assets/ui/background.png"), None)
+                    .unwrap(),
+            )
+            .background_margin(RectOffset::new(20.0, 20.0, 10.0, 10.0))
+            .margin(RectOffset::new(-20.0, -30.0, 0.0, 0.0))
+            .build();
+
+        let button_style = root_ui()
+            .style_builder()
+            .background(
+                Image::from_file_with_format(include_bytes!("../assets/ui/b_background.png"), None)
+                    .unwrap(),
+            )
+            .background_margin(RectOffset::new(37.0, 37.0, 5.0, 5.0))
+            .margin(RectOffset::new(10.0, 10.0, 15.0, 0.0))
+            .background_hovered(
+                Image::from_file_with_format(include_bytes!("../assets/ui/b_hover.png"), None)
+                    .unwrap(),
+            )
+            .background_clicked(
+                Image::from_file_with_format(include_bytes!("../assets/ui/b_pressed.png"), None)
+                    .unwrap(),
+            )
+            .font(include_bytes!("../assets/ui/HTOWERT.TTF"))
+            .unwrap()
+            .text_color(Color::from_rgba(0, 0, 0, 255))
+            .font_size(40)
+            .build();
+
+        Skin {
+            window_style,
+            button_style,
+            label_style,
+            ..root_ui().default_skin()
+        }
+    };
+    return skin1;
+}
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut game = init_game().await;
@@ -49,17 +110,21 @@ async fn main() {
                 update(&mut game).await;
                 draw(&mut game);
             }
-            GameState::Pause => menu(&mut game).await,
-            GameState::Over => todo!(),
-            GameState::Start => todo!(),
+            GameState::Menu => menu(&mut game).await,
+            GameState::Options => menu(&mut game).await,
         }
         next_frame().await;
     }
 }
 
 async fn init_game() -> Game {
+    let ui_skin = create_ui_skin();
     let player_texture = load_texture("assets/player.png").await.unwrap();
-    let player = Player::new(Vec2::new(100.0, 100.0), 3.0, player_texture);
+    let player = Player::new(
+        Vec2::new(screen_width() / 2.0, screen_height() / 2.0),
+        3.0,
+        player_texture,
+    );
 
     let enemy_texture = load_texture("assets/enemy.png").await.unwrap();
     let enemies: Vec<Enemy> = Vec::new();
@@ -95,7 +160,7 @@ async fn init_game() -> Game {
     assets.push(machinegun_texture);
 
     Game {
-        state: GameState::Play,
+        state: GameState::Menu,
         player: player,
         enemies: enemies,
         enemy_texture: enemy_texture,
@@ -104,6 +169,7 @@ async fn init_game() -> Game {
         last_spawn: get_time(),
         spawn_rate: 0.5,
         ui_assets: assets,
+        ui_skin: ui_skin,
     }
 }
 
@@ -120,7 +186,7 @@ fn spawn_enemies(game: &mut Game) {
 
 async fn update(game: &mut Game) {
     if is_key_pressed(KeyCode::Escape) {
-        game.state = GameState::Pause;
+        game.state = GameState::Menu;
     }
 
     spawn_enemies(game);
@@ -410,38 +476,71 @@ fn draw_inventory(game: &mut Game) {
 
 async fn menu(game: &mut Game) {
     match game.state {
-        GameState::Pause => {
-            let play_item = MenuItem::new("Play".to_owned(), Vec2::new(300., 200.), 100, BLUE);
-            clear_background(WHITE);
-            draw_text_ex(
-                "Game is Paused",
-                100.0,
-                100.0,
-                TextParams {
-                    font_size: 100,
-                    color: BLACK,
-                    ..Default::default()
-                },
-            );
-            // Draw the play button
-            draw_text_ex(
-                &play_item.text,
-                play_item.pos.x,
-                play_item.pos.y,
-                TextParams {
-                    font_size: play_item.font_size,
-                    color: play_item.font_colour,
-                    ..Default::default()
-                },
-            );
+        GameState::Menu => {
+            root_ui().push_skin(&game.ui_skin);
+            root_ui().window(
+                hash!(),
+                vec2(0.0 - 5., 0.0),
+                vec2(screen_width() + 5., screen_height() + 5.0),
+                |ui| {
+                    widgets::Label::new("Grillageddon")
+                        .position(vec2(260.0, 10.0))
+                        .ui(ui);
+                    let play_button = widgets::Button::new("Play")
+                        .position(vec2(300., 100.0))
+                        .ui(ui);
+                    let info_button = widgets::Button::new("Info")
+                        .position(vec2(300.0, 200.0))
+                        .ui(ui);
 
-            if is_key_pressed(KeyCode::Escape) {
-                game.state = GameState::Play;
-            }
+                    let quit_button = widgets::Button::new("Quit")
+                        .position(vec2(300.0, 300.0))
+                        .ui(ui);
+
+                    if play_button {
+                        game.state = GameState::Play;
+                    }
+
+                    if info_button {
+                        game.state = GameState::Options
+                    }
+
+                    if quit_button {
+                        quit()
+                    }
+                },
+            );
+            root_ui().pop_skin();
         }
         GameState::Play => todo!(),
-        GameState::Over => todo!(),
-        GameState::Start => todo!(),
+        GameState::Options => {
+            root_ui().push_skin(&game.ui_skin);
+            root_ui().window(
+                hash!(),
+                vec2(0.0 - 5., 0.0),
+                vec2(screen_width() + 5., screen_height() + 5.0),
+                |ui| {
+                    widgets::Label::new("Grillageddon")
+                        .position(vec2(260.0, 10.0))
+                        .ui(ui);
+
+                    widgets::Label::new(
+                        "Controls: WASD cycle through weapons: 1, 2, 3",
+                    )
+                    .position(vec2(100.0, 150.0))
+                    .ui(ui);
+
+                    let back_button = widgets::Button::new("Back")
+                        .position(vec2(300., 300.0))
+                        .ui(ui);
+
+                    if back_button {
+                        game.state = GameState::Menu
+                    }
+                },
+            );
+            root_ui().pop_skin();
+        }
     };
 }
 
@@ -454,25 +553,6 @@ impl SpawnPoint {
         SpawnPoint {
             pos: pos,
             texture: texture.clone(),
-        }
-    }
-}
-
-pub struct MenuItem {
-    text: String,
-    pos: Vec2,
-    font_size: u16,
-    font_colour: Color,
-    rect: Rect,
-}
-impl MenuItem {
-    pub fn new(text: String, pos: Vec2, font_size: u16, font_colour: Color) -> MenuItem {
-        MenuItem {
-            text: text,
-            pos: pos,
-            font_size: font_size,
-            font_colour: font_colour,
-            rect: Rect::new(pos.x, pos.y, font_size as f32, font_size as f32),
         }
     }
 }

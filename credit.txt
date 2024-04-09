@@ -1,0 +1,5 @@
+UI assets
+https://crusenho.itch.io/complete-ui-essential-pack
+
+Fonts
+https://github.com/not-fl3/macroquad/tree/master/examples/ui_assets
