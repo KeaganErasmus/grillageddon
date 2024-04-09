@@ -8,6 +8,7 @@ pub enum WeaponType {
 
 pub struct Player {
     pub position: Vec2,
+    pub health: i32,
     pub speed: f32,
     pub texture: Texture2D,
     pub coll_rect: Rect,
@@ -17,12 +18,14 @@ pub struct Player {
     pub last_shot: f64,
     pub fire_rate: f64,
     pub shotgun_fire_rate: f64,
+    pub is_dead: bool
 }
 
 impl Player {
     pub fn new(position: Vec2, speed: f32, texture: Texture2D) -> Player {
         Player {
             position: position,
+            health: 500,
             speed: speed,
             texture: texture.clone(),
             coll_rect: Rect::new(position.x, position.y, 32.0, 32.0),
@@ -32,6 +35,7 @@ impl Player {
             last_shot: get_time(),
             fire_rate: 0.1,
             shotgun_fire_rate: 0.9,
+            is_dead: false
         }
     }
 }

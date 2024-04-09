@@ -2,6 +2,8 @@ mod bullet;
 mod enemy;
 mod player;
 
+use std::borrow::Borrow;
+
 use libm::atan2;
 use macroquad::{
     miniquad::window::quit,
@@ -104,6 +106,10 @@ fn create_ui_skin() -> Skin {
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut game = init_game().await;
+
+    if game.player.is_dead {
+
+    }
     loop {
         clear_background(WHITE);
         match game.state {
@@ -186,13 +192,27 @@ fn spawn_enemies(game: &mut Game) {
     }
 }
 
+fn reset_game(game: &mut Game){
+    game.bullets.clear();
+    game.enemies.clear();
+    game.player.is_dead = false;
+    game.player.health = 500;
+}
+
 async fn update(game: &mut Game) {
     if is_key_pressed(KeyCode::Escape) {
         game.state = GameState::Menu;
     }
 
+    if game.player.is_dead {
+        reset_game(game);
+        game.state = GameState::Over
+    }
+
     spawn_enemies(game);
-    player_update(game);
+    if !game.player.is_dead{
+        player_update(game);
+    }
     bullet_update(game).await;
     enemy_update(game);
     collision_check(game);
@@ -298,6 +318,12 @@ fn collision_check(game: &mut Game) {
             }
         }
     }
+
+    for enemy in game.enemies.iter_mut() {
+        if enemy.coll_rect.overlaps(&game.player.coll_rect){
+            game.player.health -= 10;
+        }
+    }
 }
 
 fn damage_enemy(enemy: &mut Enemy, dmg: i32) {
@@ -336,6 +362,10 @@ fn player_update(game: &mut Game) {
 
     if movement.length() > 1.0 {
         movement = movement.normalize();
+    }
+
+    if game.player.health <= 0 {
+        game.player.is_dead = true
     }
 
     game.player.position += movement * game.player.speed;
