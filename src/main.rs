@@ -2,13 +2,9 @@ mod bullet;
 mod enemy;
 mod player;
 
-use std::borrow::Borrow;
-
 use libm::atan2;
 use macroquad::{
-    miniquad::window::quit,
-    prelude::*,
-    ui::{hash, root_ui, widgets, Skin},
+    audio::Sound, miniquad::window::quit, prelude::*, ui::{hash, root_ui, widgets, Skin}
 };
 
 use bullet::Bullet;
@@ -35,6 +31,9 @@ pub struct Game {
     spawn_rate: f64,
     ui_assets: Vec<Texture2D>,
     ui_skin: Skin,
+    score: i32,
+    final_score: i32,
+    audio: Vec<Sound>
 }
 
 fn window_conf() -> Conf {
@@ -167,6 +166,8 @@ async fn init_game() -> Game {
     assets.push(shotgun_texture);
     assets.push(machinegun_texture);
 
+    let mut sounds = Vec::new();
+
     Game {
         state: GameState::Menu,
         player: player,
@@ -178,6 +179,9 @@ async fn init_game() -> Game {
         spawn_rate: 0.5,
         ui_assets: assets,
         ui_skin: ui_skin,
+        score: 0,
+        final_score: 0,
+        audio: sounds
     }
 }
 
@@ -193,10 +197,12 @@ fn spawn_enemies(game: &mut Game) {
 }
 
 fn reset_game(game: &mut Game){
+    game.score = 0;
     game.bullets.clear();
     game.enemies.clear();
     game.player.is_dead = false;
     game.player.health = 500;
+    game.player.position = Vec2::new(screen_width()/2.0, screen_height()/2.0);
 }
 
 async fn update(game: &mut Game) {
@@ -209,13 +215,13 @@ async fn update(game: &mut Game) {
         game.state = GameState::Over
     }
 
-    spawn_enemies(game);
     if !game.player.is_dead{
+        spawn_enemies(game);
         player_update(game);
+        bullet_update(game).await;
+        enemy_update(game);
+        collision_check(game);
     }
-    bullet_update(game).await;
-    enemy_update(game);
-    collision_check(game);
 }
 
 async fn bullet_update(game: &mut Game) {
@@ -304,6 +310,7 @@ async fn bullet_update(game: &mut Game) {
 }
 
 fn collision_check(game: &mut Game) {
+    let current_time = get_time();
     for enemy in game.enemies.iter_mut() {
         for bullet in game.bullets.iter_mut() {
             if enemy.coll_rect.overlaps(&bullet.coll_rect) {
@@ -320,7 +327,7 @@ fn collision_check(game: &mut Game) {
     }
 
     for enemy in game.enemies.iter_mut() {
-        if enemy.coll_rect.overlaps(&game.player.coll_rect){
+        if enemy.coll_rect.overlaps(&game.player.coll_rect) && current_time - enemy.dmg_cd as f64 > 2.0{
             game.player.health -= 10;
         }
     }
@@ -332,6 +339,7 @@ fn damage_enemy(enemy: &mut Enemy, dmg: i32) {
 
 fn player_update(game: &mut Game) {
     let mut movement = Vec2::default();
+    println!("{}", game.player.health);
     if is_key_pressed(KeyCode::Key1) {
         game.player.weapon_type = WeaponType::Pistol
     }
@@ -365,6 +373,7 @@ fn player_update(game: &mut Game) {
     }
 
     if game.player.health <= 0 {
+        game.final_score = game.score;
         game.player.is_dead = true
     }
 
@@ -402,7 +411,9 @@ fn enemy_update(game: &mut Game) {
                 }
             }
         }
-
+        if enemy.health <= 0 {
+            game.score += 5;
+        }
         enemy.position += normalized_direction * enemy.speed;
         enemy.coll_rect.x = enemy.position.x;
         enemy.coll_rect.y = enemy.position.y;
@@ -412,6 +423,11 @@ fn enemy_update(game: &mut Game) {
 }
 
 fn draw(game: &mut Game) {
+    draw_text_ex(&game.score.to_string(), screen_width()/2.0, 50.0, TextParams{
+        font_size: 50,
+        color: BLACK,
+        ..Default::default()
+    });
     // Draw the three guns at the bottom
     draw_inventory(game);
 
@@ -584,7 +600,7 @@ async fn menu(game: &mut Game) {
                         .ui(ui);
 
                     widgets::Label::new(
-                        "You Died",
+                        "You Died!! Score ".to_owned() + &game.final_score.to_string(),
                     )
                     .position(vec2(100.0, 150.0))
                     .ui(ui);

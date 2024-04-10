@@ -7,6 +7,7 @@ pub struct Enemy {
     pub texture: Texture2D,
     pub coll_rect: Rect,
     pub health: i32,
+    pub dmg_cd: f32
 }
 
 impl Enemy {
@@ -17,6 +18,7 @@ impl Enemy {
             texture: texture.clone(),
             coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
             health: health,
+            dmg_cd: 1.0
         }
     }
 }
