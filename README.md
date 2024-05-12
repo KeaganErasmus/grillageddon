@@ -10,7 +10,7 @@ I realised that I am more a fan of gameplay and systems programming, having to c
 
 ## What did I learn
 * I learnt a great deal about the Rust programming language and will be using it in future projects
-* I learnt about ways to approach game development in a non-oop way ( i felt like this was an eye opener ) I will be going down a rabbit hole of learning about Data Oriented Design for my next game projects.
+* I learnt about ways to approach game development in a non-oop way. I will be going down a rabbit hole of learning about Data Oriented Design for my next game projects.
 
 ## What was planned
 * more enemy variants
