@@ -11,3 +11,4 @@ This "game" was created to learn the Rust programming language. This game has a 
 * I learnt a great deal about the Rust programming language and will likely be using it in future projects
 * I learnt about ways to approach game development in a non-oop way.
 * I learnt a lot about implementing game systems
+* I learnt about ui programming
