@@ -1,10 +1,11 @@
+
 mod bullet;
 mod enemy;
 mod player;
 
 use libm::atan2;
 use macroquad::{
-    audio::Sound, miniquad::window::quit, prelude::*, ui::{hash, root_ui, widgets, Skin}
+    miniquad::window::quit, prelude::*, ui::{hash, root_ui, widgets, Skin}
 };
 
 use bullet::Bullet;
@@ -18,7 +19,7 @@ pub enum GameState {
     Over
 }
 
-const MAX_ENEMIES: usize = 100;
+const MAX_ENEMIES: usize = 1000;
 
 pub struct Game {
     state: GameState,
@@ -33,7 +34,6 @@ pub struct Game {
     ui_skin: Skin,
     score: i32,
     final_score: i32,
-    audio: Vec<Sound>
 }
 
 fn window_conf() -> Conf {
@@ -106,9 +106,6 @@ fn create_ui_skin() -> Skin {
 async fn main() {
     let mut game = init_game().await;
 
-    if game.player.is_dead {
-
-    }
     loop {
         clear_background(WHITE);
         match game.state {
@@ -166,8 +163,6 @@ async fn init_game() -> Game {
     assets.push(shotgun_texture);
     assets.push(machinegun_texture);
 
-    let mut sounds = Vec::new();
-
     Game {
         state: GameState::Menu,
         player: player,
@@ -181,7 +176,6 @@ async fn init_game() -> Game {
         ui_skin: ui_skin,
         score: 0,
         final_score: 0,
-        audio: sounds
     }
 }
 
@@ -310,7 +304,6 @@ async fn bullet_update(game: &mut Game) {
 }
 
 fn collision_check(game: &mut Game) {
-    let current_time = get_time();
     for enemy in game.enemies.iter_mut() {
         for bullet in game.bullets.iter_mut() {
             if enemy.coll_rect.overlaps(&bullet.coll_rect) {
@@ -327,8 +320,16 @@ fn collision_check(game: &mut Game) {
     }
 
     for enemy in game.enemies.iter_mut() {
-        if enemy.coll_rect.overlaps(&game.player.coll_rect) && current_time - enemy.dmg_cd as f64 > 2.0{
+        let current_time = get_time();
+
+        if enemy.coll_rect.overlaps(&game.player.coll_rect) && enemy.can_attack{
             game.player.health -= 10;
+            enemy.can_attack = false;
+            enemy.dmg_cd = current_time;
+        }
+        // reset can attack to true after a few seconds
+        if !enemy.can_attack && (current_time - enemy.dmg_cd as f64) > 0.5 {
+            enemy.can_attack = true
         }
     }
 }
