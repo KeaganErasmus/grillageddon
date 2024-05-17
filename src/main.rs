@@ -3,9 +3,16 @@ mod bullet;
 mod enemy;
 mod player;
 
+use std::ops::Index;
+
 use libm::atan2;
 use macroquad::{
     miniquad::window::quit, prelude::*, ui::{hash, root_ui, widgets, Skin}
+};
+use quad_snd::{
+    decoder::read_wav_ext,
+    mixer::{PlaybackStyle, SoundMixer},
+    mixer::{Sound, Volume},
 };
 
 use bullet::Bullet;
@@ -34,6 +41,8 @@ pub struct Game {
     ui_skin: Skin,
     score: i32,
     final_score: i32,
+    sounds: Vec<Sound>,
+    mixer: SoundMixer
 }
 
 fn window_conf() -> Conf {
@@ -102,9 +111,38 @@ fn create_ui_skin() -> Skin {
     };
     return skin1;
 }
+
+
+pub fn load_soundd(game: &mut Game, bytes: &[u8]) {
+    let sound = read_wav_ext(bytes, PlaybackStyle::Once).unwrap();
+    game.sounds.push(sound);
+}
+
+pub fn play_soundd(game: &mut Game, volume: Volume, sound_index: usize) {
+    let sound =  &game.sounds[sound_index];
+    game.mixer.play_ext(sound.clone(), volume);
+}
+
+//TODO: THIS IS BAD YUCKY FIGURE OUT A BETTER WAY OF DOING SOUNDS
+fn load_all_sounds(game: &mut Game) {
+    // menu button click = 0
+    let menu_click = include_bytes!("../assets/sounds/button_click.wav");
+    load_soundd(game, menu_click);
+
+    // gun firing = 1
+    let gun_shoot = include_bytes!("../assets/sounds/gun_shoot.wav");
+    load_soundd(game, gun_shoot);
+
+    // enemy hit = 2
+    let enemy_hit = include_bytes!("../assets/sounds/enemy_hit.wav");
+    load_soundd(game, enemy_hit);
+}
+
+
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut game = init_game().await;
+    load_all_sounds(&mut game);
 
     loop {
         clear_background(WHITE);
@@ -163,6 +201,9 @@ async fn init_game() -> Game {
     assets.push(shotgun_texture);
     assets.push(machinegun_texture);
 
+    let mut mixer = SoundMixer::new();
+    let sounds = Vec::new();
+
     Game {
         state: GameState::Menu,
         player: player,
@@ -176,6 +217,8 @@ async fn init_game() -> Game {
         ui_skin: ui_skin,
         score: 0,
         final_score: 0,
+        sounds: sounds,
+        mixer: mixer
     }
 }
 
@@ -223,6 +266,7 @@ async fn bullet_update(game: &mut Game) {
     match game.player.weapon_type {
         WeaponType::Pistol => {
             if is_mouse_button_pressed(MouseButton::Left) {
+                play_soundd(game, Volume(0.3), 1);
                 let mouse_pos = mouse_position();
                 let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
                 game.bullets.push(
@@ -241,6 +285,7 @@ async fn bullet_update(game: &mut Game) {
             if is_mouse_button_down(MouseButton::Left)
                 && current_time - game.player.last_shot > game.player.fire_rate
             {
+                play_soundd(game, Volume(0.3), 1);
                 let mouse_pos = mouse_position();
                 let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
                 game.bullets.push(
@@ -260,6 +305,7 @@ async fn bullet_update(game: &mut Game) {
             if is_mouse_button_down(MouseButton::Left)
                 && current_time - game.player.last_shot > game.player.shotgun_fire_rate
             {
+                play_soundd(game, Volume(0.3), 1);
                 let player_pos = Vec2::new(game.player.position.x, game.player.position.y + 16.);
                 let mouse_pos = mouse_position();
                 let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
@@ -315,6 +361,7 @@ fn collision_check(game: &mut Game) {
                     WeaponType::Shotgun => dmg = 5,
                 }
                 damage_enemy(enemy, dmg);
+                // play_soundd(game, Volume(0.3), 2);
             }
         }
     }
@@ -546,14 +593,17 @@ async fn menu(game: &mut Game) {
                         .ui(ui);
 
                     if play_button {
+                        play_soundd(game, Volume(0.5), 0);
                         game.state = GameState::Play;
                     }
 
                     if info_button {
-                        game.state = GameState::Options
+                        play_soundd(game, Volume(0.5), 0);
+                        game.state = GameState::Options;
                     }
 
                     if quit_button {
+                        play_soundd(game, Volume(0.5), 0);
                         quit()
                     }
                 },
@@ -583,6 +633,7 @@ async fn menu(game: &mut Game) {
                         .ui(ui);
 
                     if back_button {
+                        play_soundd(game, Volume(0.5), 0);
                         game.state = GameState::Menu
                     }
                 },

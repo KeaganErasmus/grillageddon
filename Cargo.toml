@@ -9,3 +9,5 @@ edition = "2021"
 libm = "0.2.8"
 macroquad = "0.4.5"
 rand = "0.8.5"
+
+quad-snd = "0.1.0-alpha.1"
