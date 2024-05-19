@@ -8,6 +8,9 @@ pub enum WeaponType {
 
 pub struct Player {
     pub position: Vec2,
+    pub velocity: Vec2,
+    pub acceleration: f32,
+    pub friction: f32,
     pub health: i32,
     pub speed: f32,
     pub texture: Texture2D,
@@ -25,6 +28,9 @@ impl Player {
     pub fn new(position: Vec2, speed: f32, texture: Texture2D) -> Player {
         Player {
             position: position,
+            velocity: Vec2::new(0.0, 0.0),
+            acceleration: 1.0,
+            friction: 0.5,
             health: 500,
             speed: speed,
             texture: texture.clone(),

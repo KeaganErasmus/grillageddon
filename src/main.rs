@@ -2,9 +2,6 @@
 mod bullet;
 mod enemy;
 mod player;
-
-use std::ops::Index;
-
 use libm::atan2;
 use macroquad::{
     miniquad::window::quit, prelude::*, ui::{hash, root_ui, widgets, Skin}
@@ -205,7 +202,7 @@ async fn init_game() -> Game {
     assets.push(shotgun_texture);
     assets.push(machinegun_texture);
 
-    let mut mixer = SoundMixer::new();
+    let mixer = SoundMixer::new();
     let sounds = Vec::new();
 
     Game {
@@ -390,8 +387,6 @@ fn damage_enemy(enemy: &mut Enemy, dmg: i32) {
 }
 
 fn player_update(game: &mut Game) {
-    let mut movement = Vec2::default();
-    println!("{}", game.player.health);
     if is_key_pressed(KeyCode::Key1) {
         game.player.weapon_type = WeaponType::Pistol
     }
@@ -405,23 +400,34 @@ fn player_update(game: &mut Game) {
     }
 
     if is_key_down(KeyCode::A) {
-        movement.x -= 1.0;
+        game.player.velocity.x -= game.player.acceleration;
     }
 
     if is_key_down(KeyCode::D) {
-        movement.x += 1.0;
+        game.player.velocity.x += game.player.acceleration;
     }
 
     if is_key_down(KeyCode::W) {
-        movement.y -= 1.0;
+        game.player.velocity.y -= game.player.acceleration;
     }
 
     if is_key_down(KeyCode::S) {
-        movement.y += 1.0;
+        game.player.velocity.y += game.player.acceleration;
     }
 
-    if movement.length() > 1.0 {
-        movement = movement.normalize();
+    game.player.velocity.y = clamp(game.player.velocity.y, -5.0, 5.0);
+    game.player.velocity.x = clamp(game.player.velocity.x, -5.0, 5.0);
+
+    if game.player.velocity.x > 0.0 {
+        game.player.velocity.x -= game.player.friction;
+    } else if game.player.velocity.x < 0.0 {
+        game.player.velocity.x += game.player.friction; 
+    }
+
+    if game.player.velocity.y > 0.0 {
+        game.player.velocity.y -= game.player.friction;
+    } else if game.player.velocity.y < 0.0 {
+        game.player.velocity.y += game.player.friction; 
     }
 
     if game.player.health <= 0 {
@@ -429,7 +435,7 @@ fn player_update(game: &mut Game) {
         game.player.is_dead = true
     }
 
-    game.player.position += movement * game.player.speed;
+    game.player.position += game.player.velocity;
     game.player.coll_rect.x = game.player.position.x;
     game.player.coll_rect.y = game.player.position.y;
 }
@@ -500,14 +506,6 @@ fn draw(game: &mut Game) {
     }
 
     for enemy in game.enemies.iter_mut() {
-        draw_rectangle_lines(
-            enemy.position.x,
-            enemy.position.y,
-            enemy.coll_rect.w,
-            enemy.coll_rect.h,
-            2.,
-            RED,
-        );
 
         let direction = game.player.position - enemy.position;
         let angle_to_player = atan2(direction.y as f64, direction.x as f64);
@@ -538,7 +536,7 @@ fn draw(game: &mut Game) {
             rotation: rotation as f32,
             ..Default::default()
         },
-    )
+    );
 }
 
 fn draw_inventory(game: &mut Game) {
