@@ -22,6 +22,12 @@ pub enum GameState {
     Over
 }
 
+pub enum SoundType {
+    MenuClick,
+    PistolShot,
+    EnemyHit
+}
+
 const MAX_ENEMIES: usize = 1000;
 
 pub struct Game {
@@ -37,8 +43,6 @@ pub struct Game {
     ui_skin: Skin,
     score: i32,
     final_score: i32,
-    sounds: Vec<Sound>,
-    mixer: SoundMixer
 }
 
 fn window_conf() -> Conf {
@@ -109,51 +113,44 @@ fn create_ui_skin() -> Skin {
 }
 
 
-pub fn load_soundd(game: &mut Game, bytes: &[u8]) {
+pub fn sound_load(bytes: &[u8]) -> Sound {
     let sound = read_wav_ext(bytes, PlaybackStyle::Once).unwrap();
-    game.sounds.push(sound);
+    return sound;
 }
 
-pub fn play_soundd(game: &mut Game, volume: Volume, sound_index: usize) {
-    let sound =  &game.sounds[sound_index];
-    game.mixer.play_ext(sound.clone(), volume);
-}
-
-//TODO: THIS IS BAD YUCKY FIGURE OUT A BETTER WAY OF DOING SOUNDS
-fn load_all_sounds(game: &mut Game) {
-    // menu button click = 0
-    let menu_click = include_bytes!("../assets/sounds/button_click.wav");
-    load_soundd(game, menu_click);
-
-    // gun firing = 1
-    let gun_shoot = include_bytes!("../assets/sounds/gun_shoot.wav");
-    load_soundd(game, gun_shoot);
-
-    // enemy hit = 2
-    let enemy_hit = include_bytes!("../assets/sounds/enemy_hit.wav");
-    load_soundd(game, enemy_hit);
-
-    // menu music = 3
-    let menu_music = include_bytes!("../assets/sounds/menu_music.wav");
-    load_soundd(game, menu_music);
+fn sound_play(sound: SoundType, volume: Volume, mixer: &mut SoundMixer) {
+    match sound {
+        SoundType::MenuClick => {
+            let sound = sound_load(include_bytes!("../assets/sounds/button_click.wav"));
+            mixer.play_ext(sound, volume);
+        },
+        SoundType::PistolShot => {
+            let sound = sound_load(include_bytes!("../assets/sounds/gun_shoot.wav"));
+            mixer.play_ext(sound, volume);
+        },
+        SoundType::EnemyHit => {
+            let sound = sound_load(include_bytes!("../assets/sounds/enemy_hit.wav"));
+            mixer.play_ext(sound, volume);
+        },
+    }
 }
 
 
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut game = init_game().await;
-    load_all_sounds(&mut game);
+    let mut mixer = SoundMixer::new();
 
     loop {
         clear_background(WHITE);
         match game.state {
             GameState::Play => {
-                update(&mut game).await;
+                update(&mut game, &mut mixer).await;
                 draw(&mut game);
             }
-            GameState::Menu => menu(&mut game).await,
-            GameState::Options => menu(&mut game).await,
-            GameState::Over => menu(&mut game).await
+            GameState::Menu => menu(&mut game, &mut mixer).await,
+            GameState::Options => menu(&mut game, &mut mixer).await,
+            GameState::Over => menu(&mut game, &mut mixer).await
         }
         next_frame().await;
     }
@@ -201,9 +198,6 @@ async fn init_game() -> Game {
     assets.push(shotgun_texture);
     assets.push(machinegun_texture);
 
-    let mixer = SoundMixer::new();
-    let sounds = Vec::new();
-
     Game {
         state: GameState::Menu,
         player: player,
@@ -217,8 +211,6 @@ async fn init_game() -> Game {
         ui_skin: ui_skin,
         score: 0,
         final_score: 0,
-        sounds: sounds,
-        mixer: mixer
     }
 }
 
@@ -242,7 +234,7 @@ fn reset_game(game: &mut Game){
     game.player.position = Vec2::new(screen_width()/2.0, screen_height()/2.0);
 }
 
-async fn update(game: &mut Game) {
+async fn update(game: &mut Game, mixer: &mut SoundMixer) {
     if is_key_pressed(KeyCode::Escape) {
         game.state = GameState::Menu;
     }
@@ -255,18 +247,18 @@ async fn update(game: &mut Game) {
     if !game.player.is_dead{
         spawn_enemies(game);
         player_update(game);
-        bullet_update(game).await;
+        bullet_update(game, mixer).await;
         enemy_update(game);
-        collision_check(game);
+        collision_check(game, mixer);
     }
 }
 
-async fn bullet_update(game: &mut Game) {
+async fn bullet_update(game: &mut Game, mixer: &mut SoundMixer) {
 
     match game.player.weapon_type {
         WeaponType::Pistol => {
             if is_mouse_button_pressed(MouseButton::Left) {
-                play_soundd(game, Volume(0.3), 1);
+                sound_play(SoundType::PistolShot,Volume(0.3), mixer);
                 let mouse_pos = mouse_position();
                 let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
                 game.bullets.push(
@@ -285,7 +277,7 @@ async fn bullet_update(game: &mut Game) {
             if is_mouse_button_down(MouseButton::Left)
                 && current_time - game.player.last_shot > game.player.fire_rate
             {
-                play_soundd(game, Volume(0.3), 1);
+                sound_play(SoundType::PistolShot,Volume(0.3), mixer);
                 let mouse_pos = mouse_position();
                 let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
                 game.bullets.push(
@@ -305,7 +297,7 @@ async fn bullet_update(game: &mut Game) {
             if is_mouse_button_down(MouseButton::Left)
                 && current_time - game.player.last_shot > game.player.shotgun_fire_rate
             {
-                play_soundd(game, Volume(0.3), 1);
+                sound_play(SoundType::PistolShot,Volume(0.3), mixer);
                 let player_pos = Vec2::new(game.player.position.x, game.player.position.y + 16.);
                 let mouse_pos = mouse_position();
                 let mouse_target = Vec2::new(mouse_pos.0, mouse_pos.1);
@@ -349,7 +341,7 @@ async fn bullet_update(game: &mut Game) {
     game.bullets.retain(|bullet| bullet.is_active);
 }
 
-fn collision_check(game: &mut Game) {
+fn collision_check(game: &mut Game, mixer: &mut SoundMixer) {
     for enemy in game.enemies.iter_mut() {
         for bullet in game.bullets.iter_mut() {
             if enemy.coll_rect.overlaps(&bullet.coll_rect) {
@@ -361,6 +353,7 @@ fn collision_check(game: &mut Game) {
                     WeaponType::Shotgun => dmg = 5,
                 }
                 damage_enemy(enemy, dmg);
+                sound_play(SoundType::EnemyHit, Volume(0.2), mixer);
                 // play_soundd(game, Volume(0.3), 2);
             }
         }
@@ -581,7 +574,7 @@ fn draw_inventory(game: &mut Game) {
     }
 }
 
-async fn menu(game: &mut Game) {
+async fn menu(game: &mut Game, mixer: &mut SoundMixer) {
     match game.state {
         GameState::Menu => {
             root_ui().push_skin(&game.ui_skin);
@@ -605,17 +598,17 @@ async fn menu(game: &mut Game) {
                         .ui(ui);
 
                     if play_button {
-                        play_soundd(game, Volume(0.5), 0);
+                        sound_play(SoundType::MenuClick, Volume(0.5), mixer);
                         game.state = GameState::Play;
                     }
 
                     if info_button {
-                        play_soundd(game, Volume(0.5), 0);
+                        sound_play(SoundType::MenuClick, Volume(0.5), mixer);
                         game.state = GameState::Options;
                     }
 
                     if quit_button {
-                        play_soundd(game, Volume(0.5), 0);
+                        sound_play(SoundType::MenuClick, Volume(0.5), mixer);
                         quit()
                     }
                 },
@@ -645,7 +638,7 @@ async fn menu(game: &mut Game) {
                         .ui(ui);
 
                     if back_button {
-                        play_soundd(game, Volume(0.5), 0);
+                        sound_play(SoundType::MenuClick, Volume(0.5), mixer);
                         game.state = GameState::Menu
                     }
                 },
