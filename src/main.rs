@@ -136,6 +136,10 @@ fn load_all_sounds(game: &mut Game) {
     // enemy hit = 2
     let enemy_hit = include_bytes!("../assets/sounds/enemy_hit.wav");
     load_soundd(game, enemy_hit);
+
+    // menu music = 3
+    let menu_music = include_bytes!("../assets/sounds/menu_music.wav");
+    load_soundd(game, menu_music);
 }
 
 
