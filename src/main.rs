@@ -1,4 +1,3 @@
-
 mod bullet;
 mod enemy;
 mod player;
@@ -439,8 +438,6 @@ fn player_update(game: &mut Game) {
     game.player.coll_rect.x = game.player.position.x;
     game.player.coll_rect.y = game.player.position.y;
 
-    draw_rectangle_lines(game.player.position.x, game.player.position.y, game.player.coll_rect.w, game.player.coll_rect.h, 2.0, RED);
-
 }
 
 fn enemy_update(game: &mut Game) {
@@ -478,8 +475,6 @@ fn enemy_update(game: &mut Game) {
         enemy.position += normalized_direction * enemy.speed;
         enemy.coll_rect.x = enemy.position.x;
         enemy.coll_rect.y = enemy.position.y;
-
-        draw_rectangle_lines(enemy.position.x, enemy.position.y, enemy.coll_rect.w, enemy.coll_rect.h, 2.0, RED);
     }
 
     game.enemies.retain(|enemy| enemy.health > 0);
