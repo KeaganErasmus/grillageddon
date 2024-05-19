@@ -438,6 +438,9 @@ fn player_update(game: &mut Game) {
     game.player.position += game.player.velocity;
     game.player.coll_rect.x = game.player.position.x;
     game.player.coll_rect.y = game.player.position.y;
+
+    draw_rectangle_lines(game.player.position.x, game.player.position.y, game.player.coll_rect.w, game.player.coll_rect.h, 2.0, RED);
+
 }
 
 fn enemy_update(game: &mut Game) {
@@ -475,6 +478,8 @@ fn enemy_update(game: &mut Game) {
         enemy.position += normalized_direction * enemy.speed;
         enemy.coll_rect.x = enemy.position.x;
         enemy.coll_rect.y = enemy.position.y;
+
+        draw_rectangle_lines(enemy.position.x, enemy.position.y, enemy.coll_rect.w, enemy.coll_rect.h, 2.0, RED);
     }
 
     game.enemies.retain(|enemy| enemy.health > 0);
@@ -488,6 +493,7 @@ fn draw(game: &mut Game) {
     });
     // Draw the three guns at the bottom
     draw_inventory(game);
+    draw_hud(game);
 
     for point in game.spawn_point.iter() {
         draw_texture(&point.texture, point.pos.x, point.pos.y, WHITE);
@@ -537,6 +543,15 @@ fn draw(game: &mut Game) {
             ..Default::default()
         },
     );
+}
+
+fn draw_hud(game: &mut Game) {
+    let hp_text = "HP ".to_owned() + &game.player.health.to_string();
+    draw_text_ex(&hp_text, 50.0, screen_height() - 50.0, TextParams{
+        font_size: 30,
+        color: BLACK,
+        ..Default::default()
+    });
 }
 
 fn draw_inventory(game: &mut Game) {

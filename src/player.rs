@@ -34,7 +34,7 @@ impl Player {
             health: 500,
             speed: speed,
             texture: texture.clone(),
-            coll_rect: Rect::new(position.x, position.y, 32.0, 32.0),
+            coll_rect: Rect::new(position.x, position.y, texture.width(), texture.height()),
             fram_index: 0,
             frame_time: 0.0,
             weapon_type: WeaponType::Pistol,
