@@ -415,8 +415,8 @@ fn player_update(game: &mut Game) {
         game.player.velocity.y += game.player.acceleration;
     }
 
-    game.player.velocity.y = clamp(game.player.velocity.y, -5.0, 5.0);
-    game.player.velocity.x = clamp(game.player.velocity.x, -5.0, 5.0);
+    game.player.velocity.y = clamp(game.player.velocity.y, -game.player.speed, game.player.speed);
+    game.player.velocity.x = clamp(game.player.velocity.x, -game.player.speed, game.player.speed);
 
     if game.player.velocity.x > 0.0 {
         game.player.velocity.x -= game.player.friction;
