@@ -25,7 +25,9 @@ pub enum GameState {
 pub enum SoundType {
     MenuClick,
     PistolShot,
-    EnemyHit
+    EnemyHit,
+    MenuMusic,
+    PlayerDie
 }
 
 const MAX_ENEMIES: usize = 1000;
@@ -43,6 +45,7 @@ pub struct Game {
     ui_skin: Skin,
     score: i32,
     final_score: i32,
+    play_music: bool
 }
 
 fn window_conf() -> Conf {
@@ -113,25 +116,33 @@ fn create_ui_skin() -> Skin {
 }
 
 
-pub fn sound_load(bytes: &[u8]) -> Sound {
-    let sound = read_wav_ext(bytes, PlaybackStyle::Once).unwrap();
+pub fn sound_load(bytes: &[u8], style: PlaybackStyle) -> Sound {
+    let sound = read_wav_ext(bytes, style).unwrap();
     return sound;
 }
 
 fn sound_play(sound: SoundType, volume: Volume, mixer: &mut SoundMixer) {
     match sound {
         SoundType::MenuClick => {
-            let sound = sound_load(include_bytes!("../assets/sounds/button_click.wav"));
+            let sound = sound_load(include_bytes!("../assets/sounds/button_click.wav"), PlaybackStyle::Once);
             mixer.play_ext(sound, volume);
         },
         SoundType::PistolShot => {
-            let sound = sound_load(include_bytes!("../assets/sounds/gun_shoot.wav"));
+            let sound = sound_load(include_bytes!("../assets/sounds/gun_shoot.wav"), PlaybackStyle::Once);
             mixer.play_ext(sound, volume);
         },
         SoundType::EnemyHit => {
-            let sound = sound_load(include_bytes!("../assets/sounds/enemy_hit.wav"));
+            let sound = sound_load(include_bytes!("../assets/sounds/enemy_hit.wav"), PlaybackStyle::Once);
             mixer.play_ext(sound, volume);
         },
+        SoundType::MenuMusic => {
+            let sound = sound_load(include_bytes!("../assets/sounds/menu_music.wav"), PlaybackStyle::Once);
+            mixer.play_ext(sound, volume);
+        },
+        SoundType::PlayerDie => {
+            let sound = sound_load(include_bytes!("../assets/sounds/player_die.wav"), PlaybackStyle::Once);
+            mixer.play_ext(sound, volume);
+        }
     }
 }
 
@@ -211,6 +222,7 @@ async fn init_game() -> Game {
         ui_skin: ui_skin,
         score: 0,
         final_score: 0,
+        play_music: true
     }
 }
 
@@ -246,7 +258,7 @@ async fn update(game: &mut Game, mixer: &mut SoundMixer) {
 
     if !game.player.is_dead{
         spawn_enemies(game);
-        player_update(game);
+        player_update(game, mixer);
         bullet_update(game, mixer).await;
         enemy_update(game);
         collision_check(game, mixer);
@@ -354,7 +366,6 @@ fn collision_check(game: &mut Game, mixer: &mut SoundMixer) {
                 }
                 damage_enemy(enemy, dmg);
                 sound_play(SoundType::EnemyHit, Volume(0.2), mixer);
-                // play_soundd(game, Volume(0.3), 2);
             }
         }
     }
@@ -366,6 +377,7 @@ fn collision_check(game: &mut Game, mixer: &mut SoundMixer) {
             game.player.health -= 10;
             enemy.can_attack = false;
             enemy.dmg_cd = current_time;
+
         }
         // reset can attack to true after a few seconds
         if !enemy.can_attack && (current_time - enemy.dmg_cd as f64) > 0.5 {
@@ -378,7 +390,7 @@ fn damage_enemy(enemy: &mut Enemy, dmg: i32) {
     enemy.health -= dmg;
 }
 
-fn player_update(game: &mut Game) {
+fn player_update(game: &mut Game, mixer: &mut SoundMixer) {
     if is_key_pressed(KeyCode::Key1) {
         game.player.weapon_type = WeaponType::Pistol
     }
@@ -424,7 +436,8 @@ fn player_update(game: &mut Game) {
 
     if game.player.health <= 0 {
         game.final_score = game.score;
-        game.player.is_dead = true
+        game.player.is_dead = true;
+        sound_play(SoundType::PlayerDie, Volume(0.3), mixer)
     }
 
     game.player.position += game.player.velocity;
@@ -574,9 +587,15 @@ fn draw_inventory(game: &mut Game) {
     }
 }
 
+
 async fn menu(game: &mut Game, mixer: &mut SoundMixer) {
     match game.state {
         GameState::Menu => {
+            // TODO: This is not a good way to do this.
+            // if game.play_music {
+            //     sound_play(SoundType::MenuMusic, Volume(0.2), mixer);
+            //     game.play_music = false
+            // }
             root_ui().push_skin(&game.ui_skin);
             root_ui().window(
                 hash!(),
