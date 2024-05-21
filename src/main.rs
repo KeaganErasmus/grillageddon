@@ -13,7 +13,7 @@ use quad_snd::{
 
 use bullet::Bullet;
 use enemy::Enemy;
-use player::{Player, WeaponType};
+use player::{Player, PowerUpType, WeaponType};
 
 pub enum GameState {
     Menu,
@@ -45,7 +45,9 @@ pub struct Game {
     ui_skin: Skin,
     score: i32,
     final_score: i32,
-    play_music: bool
+    power_up_timer: f32,
+    can_get_powerup: bool
+    // play_music: bool
 }
 
 fn window_conf() -> Conf {
@@ -222,7 +224,9 @@ async fn init_game() -> Game {
         ui_skin: ui_skin,
         score: 0,
         final_score: 0,
-        play_music: true
+        power_up_timer: 0.0,
+        can_get_powerup: true,
+        // play_music: true
     }
 }
 
@@ -360,9 +364,9 @@ fn collision_check(game: &mut Game, mixer: &mut SoundMixer) {
                 bullet.is_active = false;
                 let dmg: i32;
                 match game.player.weapon_type {
-                    WeaponType::Pistol => dmg = 5,
-                    WeaponType::Machine => dmg = 3,
-                    WeaponType::Shotgun => dmg = 5,
+                    WeaponType::Pistol =>       dmg = game.player.damage,
+                    WeaponType::Machine =>      dmg = game.player.damage - 2,
+                    WeaponType::Shotgun =>      dmg = game.player.damage
                 }
                 damage_enemy(enemy, dmg);
                 sound_play(SoundType::EnemyHit, Volume(0.2), mixer);
@@ -439,6 +443,8 @@ fn player_update(game: &mut Game, mixer: &mut SoundMixer) {
         game.player.is_dead = true;
         sound_play(SoundType::PlayerDie, Volume(0.3), mixer)
     }
+
+    player_powerups(game);
 
     game.player.position += game.player.velocity;
     game.player.coll_rect.x = game.player.position.x;
@@ -556,12 +562,18 @@ fn draw_hud(game: &mut Game) {
 }
 
 fn draw_inventory(game: &mut Game) {
+    let color: Color;
+    match game.player.power_up {
+        player::PowerUpType::None => color = WHITE,
+        player::PowerUpType::FastAttack => color = GREEN,
+        player::PowerUpType::QuadDamage => color = PURPLE,
+    };
     match game.player.weapon_type {
         WeaponType::Pistol => draw_texture_ex(
             &game.ui_assets[0],
             screen_width() / 2.0,
             screen_height() - 50.0,
-            WHITE,
+            color,
             DrawTextureParams {
                 ..Default::default()
             },
@@ -570,7 +582,7 @@ fn draw_inventory(game: &mut Game) {
             &game.ui_assets[2],
             screen_width() / 2.0,
             screen_height() - 50.0,
-            WHITE,
+            color,
             DrawTextureParams {
                 ..Default::default()
             },
@@ -579,7 +591,7 @@ fn draw_inventory(game: &mut Game) {
             &game.ui_assets[1],
             screen_width() / 2.0,
             screen_height() - 50.0,
-            WHITE,
+            color,
             DrawTextureParams {
                 ..Default::default()
             },
@@ -695,6 +707,56 @@ async fn menu(game: &mut Game, mixer: &mut SoundMixer) {
     };
 }
 
+fn player_powerups(game: &mut Game) {
+    // Look into switching powerups every 50 points
+    let random: i32;
+    if game.score % 50 == 0 && game.can_get_powerup{
+        // this is poopy method to get a powerup
+        random = rand::gen_range(1, 3);
+        
+        if random == 1{
+            game.player.has_power_up = true;
+            game.player.power_up = PowerUpType::FastAttack;
+        }
+        
+        if random == 2 {
+            game.player.has_power_up = true;
+            game.player.power_up = PowerUpType::QuadDamage;
+        }
+
+        game.can_get_powerup = false;
+    }
+
+    
+    if game.player.has_power_up == true {
+        game.power_up_timer += 0.1;
+        
+        if game.power_up_timer >= 50.0 {
+            game.player.power_up = PowerUpType::None;
+            game.player.has_power_up = false;
+            game.power_up_timer = 0.0;
+            game.can_get_powerup = true;
+        }
+    }
+    
+
+    match game.player.power_up {
+        player::PowerUpType::None => {
+            // Reset player back to normal
+            game.player.fire_rate           = 0.1;
+            game.player.shotgun_fire_rate   = 0.9;
+            game.player.damage              = 5 
+        },
+        player::PowerUpType::FastAttack => {
+            game.player.fire_rate           = 0.05;
+            game.player.shotgun_fire_rate   = 0.05;
+
+        },
+        player::PowerUpType::QuadDamage => {
+            game.player.damage = 20; 
+        },
+    }  
+}
 pub struct SpawnPoint {
     pos: Vec2,
     texture: Texture2D,

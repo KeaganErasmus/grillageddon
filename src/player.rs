@@ -6,6 +6,13 @@ pub enum WeaponType {
     Shotgun,
 }
 
+#[derive(Debug)]
+pub enum PowerUpType {
+    None,
+    FastAttack,
+    QuadDamage,
+}
+
 pub struct Player {
     pub position: Vec2,
     pub velocity: Vec2,
@@ -21,7 +28,10 @@ pub struct Player {
     pub last_shot: f64,
     pub fire_rate: f64,
     pub shotgun_fire_rate: f64,
-    pub is_dead: bool
+    pub is_dead: bool,
+    pub damage: i32,
+    pub power_up: PowerUpType,
+    pub has_power_up: bool
 }
 
 impl Player {
@@ -41,7 +51,10 @@ impl Player {
             last_shot: get_time(),
             fire_rate: 0.1,
             shotgun_fire_rate: 0.9,
-            is_dead: false
+            is_dead: false,
+            damage: 5,
+            power_up: PowerUpType::None,
+            has_power_up: false
         }
     }
 }
