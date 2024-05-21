@@ -228,6 +228,7 @@ async fn init_game() -> Game {
         can_get_powerup: true,
         // play_music: true
     }
+
 }
 
 fn spawn_enemies(game: &mut Game) {
@@ -446,10 +447,29 @@ fn player_update(game: &mut Game, mixer: &mut SoundMixer) {
 
     player_powerups(game);
 
+    
     game.player.position += game.player.velocity;
     game.player.coll_rect.x = game.player.position.x;
     game.player.coll_rect.y = game.player.position.y;
+    
+    bounds_check(game);
 
+}
+
+fn bounds_check(game: &mut Game) {
+    if game.player.position.x >= screen_width()  - game.player.texture.width() {
+        game.player.position.x = screen_width() - game.player.texture.width()
+    }
+    if game.player.position.x <= 0.0 {
+        game.player.position.x = 0.0
+    }
+
+    if game.player.position.y > screen_height()  - (game.player.texture.height() - 10.0) {
+        game.player.position.y = screen_height() - (game.player.texture.height() - 10.0)
+    }
+    if game.player.position.y <= 0.0 {
+        game.player.position.y = 0.0
+    }
 }
 
 fn enemy_update(game: &mut Game) {
