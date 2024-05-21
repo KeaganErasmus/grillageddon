@@ -661,11 +661,29 @@ async fn menu(game: &mut Game, mixer: &mut SoundMixer) {
                     widgets::Label::new(
                         "Controls: WASD cycle through weapons: 1, 2, 3",
                     )
-                    .position(vec2(100.0, 150.0))
+                    .position(vec2(100.0, 100.0))
+                    .ui(ui);
+
+                    widgets::Label::new(
+                        "You get a random powerup at the start of the game"
+                    )
+                    .position(vec2(100.0, 200.0))
+                    .ui(ui);
+
+                    widgets::Label::new(
+                        "And a new one every 50 points, They are represented by color"
+                    )
+                    .position(vec2(-20.0, 230.0))
+                    .ui(ui);
+
+                    widgets::Label::new(
+                        "Green: Fast fire, Purple: Quad Damage"
+                    )
+                    .position(vec2(100.0, 290.0))
                     .ui(ui);
 
                     let back_button = widgets::Button::new("Back")
-                        .position(vec2(300., 300.0))
+                        .position(vec2(300., 400.0))
                         .ui(ui);
 
                     if back_button {
@@ -711,7 +729,7 @@ fn player_powerups(game: &mut Game) {
     // Look into switching powerups every 50 points
     let random: i32;
     if game.score % 50 == 0 && game.can_get_powerup{
-        // this is poopy method to get a powerup
+
         random = rand::gen_range(1, 3);
         
         if random == 1{
