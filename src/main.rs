@@ -382,7 +382,7 @@ fn collision_check(game: &mut Game, mixer: &mut SoundMixer) {
             game.player.health -= 10;
             enemy.can_attack = false;
             enemy.dmg_cd = current_time;
-
+            sound_play(SoundType::EnemyHit, Volume(0.2), mixer);
         }
         // reset can attack to true after a few seconds
         if !enemy.can_attack && (current_time - enemy.dmg_cd as f64) > 0.5 {
